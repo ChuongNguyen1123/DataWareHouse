@@ -1,0 +1,29 @@
+import java.sql.*;
+
+public class DataProcessing {
+	private static Connection connection;
+	public void copyFromThisDBToAnotherDB(String DBSource, String DBDes) throws SQLException {
+		PreparedStatement statement = connection.prepareStatement("Select * From " +DBSource);
+		ResultSet resultSet = statement.executeQuery();
+		String sql = "Insert into " + DBDes;
+		while (resultSet.next()) {
+			Student student = new Student(resultSet.getString("Stt"), resultSet.getString("MaSV"),
+					resultSet.getString("Ho"), resultSet.getString("Ten"), resultSet.getString("NgaySinh"),
+					resultSet.getString("MaLop"), resultSet.getString("TenLop"), resultSet.getInt("SoDT"),
+					resultSet.getString("Email"), resultSet.getString("QueQuan"), resultSet.getString("GhiChu"));
+			sql += "values ('" + student.getStt() + "','" + student.getMaSV() + "','" + student.getHo() + "','"
+					+ student.getTen() + "','" + student.getNgaySinh() + "','" + student.getMaLop() + "','"
+					+ student.getTenLop() + "','" + student.getSoDT() + "','" + student.getEmail() + "','"
+					+ student.getQueQuan() + "','" + student.getGhiChu() + "')";
+		}
+		PreparedStatement statement1 = connection.prepareStatement(sql);
+		ResultSet resultSet1 = statement1.executeQuery();
+		
+	}
+	public static void main(String[] args) throws SQLException {
+		DataProcessing dp = new DataProcessing();
+		String DBSource ="";
+		String DBDes="";
+		dp.copyFromThisDBToAnotherDB(DBSource, DBDes);
+	}
+}
