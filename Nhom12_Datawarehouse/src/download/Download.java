@@ -1,4 +1,4 @@
-package model;
+package download;
 
 import java.awt.List;
 import java.io.BufferedInputStream;
@@ -40,6 +40,7 @@ public class Download {
 	private LinkedList<String> listFileCheck;
 	private LinkedList<Integer> listSizeFileCheck;
 
+//	Load file config.properties
 	public Connection loadProps() throws IOException {
 		FileInputStream f = new FileInputStream("src/model/dms_config.properties");
 		Properties pros = new Properties();
@@ -182,7 +183,7 @@ public class Download {
 					}
 				}
 					SendMailSSL senmail = new SendMailSSL();
-					senmail.sendMail("Data warehouse nhóm 12 ca sáng", "Đã download tổng " + sumFile + " file từ source về thư mục " + desSRCLocal + "local");
+					senmail.sendMail("Data warehouse nhÃ³m 12 ca sÃ¡ng", "Ä�Ã£ download tá»•ng " + sumFile + " file tá»« source vá»� thÆ° má»¥c " + desSRCLocal + "local");
 				System.out.println("Download " + sumFile + " file");
 				
 			}else if (file.listFiles().length > 0){

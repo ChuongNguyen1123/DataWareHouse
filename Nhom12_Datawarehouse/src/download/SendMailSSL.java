@@ -1,4 +1,4 @@
-package model;
+package download;
 import java.util.Properties;
 
 import javax.mail.Message;
