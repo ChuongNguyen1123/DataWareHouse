@@ -1,4 +1,4 @@
-package download;
+package model;
 
 import java.awt.List;
 import java.io.BufferedInputStream;
@@ -36,9 +36,8 @@ public class Download {
 	private Connection connection;
 	private LinkedList<String> listFileSource;
 	private LinkedList<Integer> listSizeFileSource;
+	
 //	Tao mang chua file check tu source voi local
-	private LinkedList<String> listFileCheck;
-	private LinkedList<Integer> listSizeFileCheck;
 
 //	Load file config.properties
 	public Connection loadProps() throws IOException {
@@ -141,11 +140,17 @@ public class Download {
 
 	public void down() throws Exception {
 		if (sid != null) {
+			int sumFile = 0;
+			LinkedList<String> lisFile = new LinkedList<>();
 			File file = new File(desSRCLocal);
 			if (file.listFiles().length == 0) {
 				status = "Download_OK";
-				int sumFile = 1;
-				LinkedList<String> lisFile = listFiles();
+				 lisFile = listFiles();
+			}else if (file.listFiles().length > 0){
+				status = "Upload";
+				 lisFile = checkFile();
+			}
+			
 					for (int i = 0; i < lisFile.size(); i++) {
 					String srcNameFile = lisFile.get(i);
 					String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
@@ -179,91 +184,71 @@ public class Download {
 							in.close();
 							out.close();
 							sumFile ++;
+						
 						}
 					}
-				}
-					SendMailSSL senmail = new SendMailSSL();
-					senmail.sendMail("Data warehouse nhÃ³m 12 ca sÃ¡ng", "Ä�Ã£ download tá»•ng " + sumFile + " file tá»« source vá»� thÆ° má»¥c " + desSRCLocal + "local");
+					}
+				
+//					SendMailSSL senmail = new SendMailSSL();
+//					senmail.sendMail("Data warehouse nhÃ³m 12 ca sÃ¡ng", "Ä�Ã£ download tá»•ng " + sumFile + " file tá»« source vá»� thÆ° má»¥c " + desSRCLocal + "local");
 				System.out.println("Download " + sumFile + " file");
 				
-			}else if (file.listFiles().length > 0){
-				status = "Upload";
-				System.out.println("Dang lam............chua hoan thanh");
-//				LinkedList<String> lisFile = checkFile();
-//				for (int i = 0; i < lisFile.size(); i++) {
-//					String srcNameFile = lisFile.get(i);
-//					String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
-//					if (nameFile.contains(kieuFile)) {
-//						URL urlForGetRequest = new URL(urlHttp
-//								+ "/webapi/entry.cgi?api=SYNO.FileStation.Download&version=1&method=download&mode=open&path="
-//								+ srcNameFile + "&_sid=" + sid);
-//						HttpURLConnection conection = (HttpURLConnection) urlForGetRequest.openConnection();
-//						conection.setRequestMethod("GET");
-//						int responseCode = conection.getResponseCode();
-//						if (responseCode == HttpURLConnection.HTTP_OK) {
-//							InputStream in = new BufferedInputStream((conection.getInputStream()));
-////				InputStream in = new BufferedInputStream(new FileInputStream(sFile));
-//							BufferedOutputStream out = new BufferedOutputStream(
-//									new FileOutputStream(desSRCLocal + "\\" + nameFile));
-//							int readData;
-//							byte[] buff = new byte[1024];
-//							while ((readData = in.read(buff)) > -1) {
-//								out.write(buff, 0, readData);
-//							}
-//							String insertLog = sqlLog;
-//							PreparedStatement pre = connection.prepareStatement(insertLog);
-//							pre.setString(1, urlHttp + srcFolderDriver);
-//							pre.setString(2, nameFile);
-//							pre.setString(3, status);
-//							pre.setInt(4, nameFile.length());
-//							pre.execute();
-//							System.out.println("Download file name: " + nameFile + "\t" + "||" + readData
-//									+ "\t" + "||" + srcFolderDriver + "\t" + "||");
-//							in.close();
-//							out.close();
-//						}
-//					}
-//				}
-			}
+				
+				
 		} else {
 			System.out.println("Not login!");
 		}
 	}
 
-//	public LinkedList<String> checkFile() throws Exception {
-//		LinkedList<String> lis = listFiles();
-//		LinkedList<String> lisFileDinhDang = new LinkedList<>();
-//		LinkedList<Integer> lsfc = new LinkedList<>();
-//		listFileCheck = new LinkedList<>();
-//		listSizeFileCheck = new LinkedList<>();
-//		File file = new File(desSRCLocal);
-//		File[] lf = file.listFiles();
+	public LinkedList<String> checkFile() throws Exception {
+		boolean flag = false;
+		LinkedList<String> lis = listFiles();
+		LinkedList<String> lisFileDinhDang = new LinkedList<>();
+		LinkedList<Integer> lsfc = new LinkedList<>();
+		LinkedList<String> listFileCheck = new LinkedList<>();
+		LinkedList<Integer> listSizeFileCheck = new LinkedList<>();
+		File file = new File(desSRCLocal);
+		File[] lf = file.listFiles();
+		String name = "";
+		String nameDrive = "";
+		int leng = 0;
+		int dd  = 0;
+		int si = 0;
 //		int index = 0;
-//		for (int i = 0; i < lis.size(); i++) {
-//			String srcNameFile = lis.get(i);
-//			String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
-//			if (nameFile.contains(kieuFile)) {
-//				lisFileDinhDang.add(nameFile);
-//				lsfc.add(listSizeFileSource.get(i));
+		for (int i = 0; i < lis.size(); i++) {
+			String srcNameFile = lis.get(i);
+			String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
+			if (nameFile.contains(kieuFile)) {
+				lisFileDinhDang.add(srcNameFile);
+				lsfc.add(listSizeFileSource.get(i));
 //				index++;
-//			}
-//		}
-//		for (int j = 0; j < lisFileDinhDang.size(); j++) {
-//			for (int l = 0; l < lf.length; l++) {
-//				if (lisFileDinhDang.get(j).equalsIgnoreCase(lf[l].getName()) && lsfc.get(j)!= lf[l].length()) {
-//					listFileCheck.add(lisFileDinhDang.get(j));
-//					listSizeFileCheck.add(lsfc.get(l));
-//				}else if(!lisFileDinhDang.get(j).equalsIgnoreCase(lf[l].getName())) {
-//					listFileCheck.add(lisFileDinhDang.get(j));
-//					listSizeFileCheck.add(lsfc.get(l));
-//				}
-//			}
-//		}
+			}
+		}
+		listFileCheck = lisFileDinhDang;
+		listSizeFileCheck = lsfc;
+		dd = lisFileDinhDang.size();
+		si = lsfc.size();
+		for (int j = 0; j < dd; j++) {
+			String srcNameFile = lisFileDinhDang.get(j);
+			String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
+			for (int l = 0; l < lf.length; l++) {
+				name = lf[l].getName();
+				nameDrive = lisFileDinhDang.get(j);
+				leng = (int) lf[l].length();
+				if (nameFile.equalsIgnoreCase(lf[l].getName()) && lsfc.get(j) == lf[l].length()) {
+					lisFileDinhDang.remove(j);
+					lsfc.remove(j);
+					j--;
+					dd--;
+					break;
+				}
+			}
+		}
 //		for (int i = 0; i < listFileCheck.size(); i++) {
-//			System.out.println(listFileCheck.get(i)+ "\t" + listSizeFileCheck.get(i));			
+//			System.out.println(lisFileDinhDang.get(i)+ "\t" + lsfc.get(i));			
 //		}
-//		return listFileCheck;
-//	}
+		return lisFileDinhDang;
+	}
 	
 	
 
