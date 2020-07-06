@@ -121,15 +121,45 @@ public class DataProcessing {
 			while (rs_getDBFromList.next()) {
 				ps_copy.setInt(1, 0);
 				ps_copy.setInt(2, rs_getDBFromList.getInt(2));
+				if(rs_getDBFromList.getString(3) == null){
+					ps_copy.setString(3, "Null");
+				}else{
 				ps_copy.setString(3, rs_getDBFromList.getString(3));
+				}
+				
+				if(rs_getDBFromList.getString(4) == null){
+					ps_copy.setString(4, "Null");
+				}else{
 				ps_copy.setString(4, rs_getDBFromList.getString(4));
-				ps_copy.setDate(5, rs_getDBFromList.getDate(5));
+				}
+				
+				if(rs_getDBFromList.getString(6) == null){
+					ps_copy.setString(6, "Null");
+				}else{
 				ps_copy.setString(6, rs_getDBFromList.getString(6));
+				}
+				if(rs_getDBFromList.getString(7) == null){
+					ps_copy.setString(7, "Null");
+				}else{
 				ps_copy.setString(7, rs_getDBFromList.getString(7));
-				ps_copy.setInt(8, rs_getDBFromList.getInt(8));
+				}
+				if(rs_getDBFromList.getString(9) == null){
+					ps_copy.setString(9, "Null");
+				}else{
 				ps_copy.setString(9, rs_getDBFromList.getString(9));
+				}
+				if(rs_getDBFromList.getString(10) == null){
+					ps_copy.setString(10, "Null");
+				}else{
 				ps_copy.setString(10, rs_getDBFromList.getString(10));
+				}
+				if(rs_getDBFromList.getString(11) == null){
+					ps_copy.setString(11, "Null");
+				}else{
 				ps_copy.setString(11, rs_getDBFromList.getString(11));
+				}
+				ps_copy.setDate(5, rs_getDBFromList.getDate(5));
+				ps_copy.setInt(8, rs_getDBFromList.getInt(8));
 				ps_copy.execute();
 				PreparedStatement ps_setActive3 = connection.prepareStatement("UPDATE " + rs_getNameOfListDB.getString(1) + " SET Active=3");
 				ps_setActive3.executeUpdate();
