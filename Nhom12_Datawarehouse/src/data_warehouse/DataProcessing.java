@@ -31,7 +31,6 @@ public class DataProcessing {
 					ps_copyNameToAnotherDB.setString(1, rs_showTable.getString(1));
 					ps_copyNameToAnotherDB.executeUpdate();
 				}
-			
 		}
 		}
 //	}
@@ -101,7 +100,7 @@ public class DataProcessing {
 	public void createTable(String name) throws SQLException, IOException, ClassNotFoundException {
 		Connection connection = connect.loadProps();
 		String ct = "CREATE TABLE " + name
-				+ "( Stt int NOT NULL PRIMARY KEY AUTO_INCREMENT,MaSV VARCHAR(20), Ho VARCHAR(20), Ten VARCHAR(20), NgaySinh VARCHAR(20), MaLop VARCHAR(20), TenLop VARCHAR(20), SoDT int, Email VARCHAR(20), QueQuan VARCHAR(20), GhiChu VARCHAR(20))";
+				+ "( Stt int NOT NULL PRIMARY KEY AUTO_INCREMENT,MaSV int, Ho VARCHAR(20), Ten VARCHAR(20), NgaySinh date, MaLop VARCHAR(20), TenLop VARCHAR(20), SoDT int, Email VARCHAR(20), QueQuan VARCHAR(20), GhiChu VARCHAR(20))";
 		System.out.println(ct);
 		PreparedStatement ps_createTable = connection.prepareStatement(ct);
 		ps_createTable.executeUpdate();
@@ -121,10 +120,10 @@ public class DataProcessing {
 					.prepareStatement("Insert into " + DB_DES + " VALUES(?,?,?,?,?,?,?,?,?,?,?)");
 			while (rs_getDBFromList.next()) {
 				ps_copy.setInt(1, 0);
-				ps_copy.setString(2, rs_getDBFromList.getString(2));
+				ps_copy.setInt(2, rs_getDBFromList.getInt(2));
 				ps_copy.setString(3, rs_getDBFromList.getString(3));
 				ps_copy.setString(4, rs_getDBFromList.getString(4));
-				ps_copy.setString(5, rs_getDBFromList.getString(5));
+				ps_copy.setDate(5, rs_getDBFromList.getDate(5));
 				ps_copy.setString(6, rs_getDBFromList.getString(6));
 				ps_copy.setString(7, rs_getDBFromList.getString(7));
 				ps_copy.setInt(8, rs_getDBFromList.getInt(8));
@@ -134,16 +133,15 @@ public class DataProcessing {
 				ps_copy.execute();
 				PreparedStatement ps_setActive3 = connection.prepareStatement("UPDATE " + rs_getNameOfListDB.getString(1) + " SET Active=3");
 				ps_setActive3.executeUpdate();
-				
 			}
 		}
 	}
 
 	public static void main(String[] args) throws SQLException, IOException, ClassNotFoundException {
 		DataProcessing dp = new DataProcessing();
-//		 dp.createTable("student1");
+//		 dp.createTable("student2");
 		dp.addNameData();
-//		dp.checkSourcDB();
-//		dp.copyFromThisDBToAnotherDB();
+		dp.checkSourcDB();
+		dp.copyFromThisDBToAnotherDB();
 	}
 }
