@@ -35,7 +35,7 @@ public class Datawarehouse {
 			boolean exist = false;
 			// *Get all name table in DW
 			PreparedStatement ps_getAllTableFromDW = connection2.prepareStatement(
-					"select TABLE_NAME from information_schema.TABLES where table_schema = 'datawarehouse'");
+					"select TABLE_NAME from information_schema.TABLES where table_schema = 'database_warehouse'");
 			ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
 			while (rs_getAllTableFromDW.next()) {
 				// *If table have been exist don't create
