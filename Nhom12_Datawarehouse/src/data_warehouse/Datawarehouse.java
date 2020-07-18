@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
+import com.mysql.cj.jdbc.DatabaseMetaData;
+
 import connectionDB.ConnectionDB;
 
 public class Datawarehouse {
@@ -19,38 +21,53 @@ public class Datawarehouse {
 	// *connection2 connect to Datawarehouse
 
 	public void createDatabase() throws ClassNotFoundException, IOException, SQLException {
-		Connection connection = connect.loadProps();
 		// *Connect to Control
+		Connection connection = connect.loadProps();
 		// *Connect to Staging
 		Connection connection1 = connect1.loadProps();
 		// *Connect to Datawarehouse
 		Connection connection2 = connect2.loadProps();
-		// *Get source and des
+		// *Get name source and des
 		PreparedStatement ps_getFolderName = connection
 				.prepareStatement("Select source_folder,folder_local from table_config");
 		ResultSet rs_getFolderName = ps_getFolderName.executeQuery();
 		while (rs_getFolderName.next()) {
-			// *Get all in source
-			PreparedStatement ps_getFromSource = connection1
-					.prepareStatement("Select * from " + rs_getFolderName.getString(1));
-			ResultSet rs_getFromSource = ps_getFromSource.executeQuery();
-			ResultSetMetaData rsmd_getFromSoure = rs_getFromSource.getMetaData();
-			// *Get num of col in table source
-			int num_of_col = rsmd_getFromSoure.getColumnCount();
-			// *Create sql to create database
-			String sql = "Create table ";
-			sql += rs_getFolderName.getString(2) + "(";
-			for (int i = 1; i < num_of_col + 1; i++) {
-				if (i == num_of_col) {
-					sql += rsmd_getFromSoure.getColumnName(i) + " varchar(255))";
-					break;
+			boolean exist = false;
+			// *Get all name table in DW
+			PreparedStatement ps_getAllTableFromDW = connection2.prepareStatement(
+					"select TABLE_NAME from information_schema.TABLES where table_schema = 'datawarehouse'");
+			ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
+			while (rs_getAllTableFromDW.next()) {
+				// *If table have been exist don't create
+				if (rs_getFolderName.getString(2).equals(rs_getAllTableFromDW.getString(1))) {
+					exist = true;
 				}
-				String col_name = rsmd_getFromSoure.getColumnName(i);
-				sql += col_name + " varchar(255),";
 			}
-			PreparedStatement ps_createDB = connection2.prepareStatement(sql);
-			ps_createDB.executeUpdate();
-			System.out.println("Success");
+			if (!exist) {
+				// *Get all in source
+				PreparedStatement ps_getFromSource = connection1
+						.prepareStatement("Select * from " + rs_getFolderName.getString(1));
+				ResultSet rs_getFromSource = ps_getFromSource.executeQuery();
+				ResultSetMetaData rsmd_getFromSoure = rs_getFromSource.getMetaData();
+				// *Get num of col in table source
+				int num_of_col = rsmd_getFromSoure.getColumnCount();
+				// *Create sql to create database
+				String sql = "Create table ";
+				sql += rs_getFolderName.getString(2) + "(";
+				for (int i = 1; i < num_of_col + 1; i++) {
+					if (i == num_of_col) {
+						sql += rsmd_getFromSoure.getColumnName(i) + " varchar(255))";
+						break;
+					}
+					String col_name = rsmd_getFromSoure.getColumnName(i);
+					sql += col_name + " varchar(255),";
+				}
+				PreparedStatement ps_createDB = connection2.prepareStatement(sql);
+				ps_createDB.executeUpdate();
+				System.out.println("Success");
+			} else {
+				System.out.println("Database is already exist");
+			}
 		}
 	}
 
@@ -115,11 +132,12 @@ public class Datawarehouse {
 
 			}
 		}
+
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
 		Datawarehouse d = new Datawarehouse();
-//		 d.createDatabase();
+		d.createDatabase();
 		d.copyToDataWarehouse();
 	}
 }
