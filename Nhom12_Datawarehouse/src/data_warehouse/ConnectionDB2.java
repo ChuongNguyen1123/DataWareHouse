@@ -1,4 +1,4 @@
-package connectionDB;
+package data_warehouse;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,7 +22,7 @@ public class ConnectionDB2 {
 
 	// phuong thuc load file dms_config.properties trong thu muc src
 	public Connection loadProps() throws IOException, SQLException, ClassNotFoundException {
-		FileInputStream f = new FileInputStream("src/dms_config.properties");
+		FileInputStream f = new FileInputStream("src/data_warehouse/dms_config.properties");
 		Properties pros = new Properties();
 		pros.load(f);
 		this.connectionURL2 = pros.getProperty("connectionURL2");

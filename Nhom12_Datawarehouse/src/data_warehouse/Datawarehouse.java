@@ -8,8 +8,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import connectionDB.ConnectionDB;
-import connectionDB.ConnectionDB1;
-import connectionDB.ConnectionDB2;
 
 public class Datawarehouse {
 	ConnectionDB connect = new ConnectionDB();
@@ -83,6 +81,7 @@ public class Datawarehouse {
 					// *Get all of DW
 					PreparedStatement ps_getFromDW = connection2
 							.prepareStatement("Select * from " + rs_getTable_Name.getString(3));
+
 					ResultSet rs_getFromDW = ps_getFromDW.executeQuery();
 					ResultSetMetaData rsmd_getFromDW = rs_getFromDW.getMetaData();
 					int colOfDW = rsmd_getFromDW.getColumnCount();
@@ -120,7 +119,7 @@ public class Datawarehouse {
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
 		Datawarehouse d = new Datawarehouse();
-		// d.createDatabase();
+//		 d.createDatabase();
 		d.copyToDataWarehouse();
 	}
 }
