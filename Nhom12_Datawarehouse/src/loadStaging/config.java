@@ -11,7 +11,7 @@ public class config {
 	String filetype;
 	String staging_table;
 	String filed_name;
-	String number_cols;
+	int number_cols;
 	@Override
 	public String toString() {
 		return "config [id=" + id + ", url=" + url + ", username=" + username + ", password=" + password
@@ -79,10 +79,10 @@ public class config {
 	public void setFiled_name(String filed_name) {
 		this.filed_name = filed_name;
 	}
-	public String getNumber_cols() {
+	public int getNumber_cols() {
 		return number_cols;
 	}
-	public void setNumber_cols(String number_cols) {
+	public void setNumber_cols(int number_cols) {
 		this.number_cols = number_cols;
 	}
 

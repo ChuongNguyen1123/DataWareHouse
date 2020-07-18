@@ -1,6 +1,7 @@
 package loadStaging ;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,12 +14,16 @@ import java.util.List;
 
 import org.apache.commons.compress.archivers.dump.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 
@@ -26,55 +31,75 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import connectionDB.ConnectionDB;
 
 public class ReadFileExcel {
-	
-public static  String readFile (String file1) throws IOException, ClassNotFoundException, SQLException {
-
-		  File file = new File(file1);// mo file
-			if (!file.exists()) {
-				System.out.println("File :" + file1 + " Không tồn tại");}
-			else {
-//	  String file = "C:\\Users\\Admin\\Documents\\17130016_sang_nhom12.xlsx";
-    // Creating a Workbook from an Excel file (.xls or .xlsx)
-    Workbook workbook = WorkbookFactory.create(file);
-
-   // Getting the Sheet at index zero
-    Sheet sheet = workbook.getSheetAt(0);
-
-    // Create a DataFormatter to format and get each cell's value as String
-    DataFormatter dataFormatter = new DataFormatter();
-
-    // 1. You can obtain a rowIterator and columnIterator and iterate over them
-
-    Iterator<Row> rowIterator = sheet.rowIterator();
-    while (rowIterator.hasNext()) {
-        Row row = rowIterator.next();
-
-        // Now let's iterate over the columns of the current row
-        Iterator<Cell> cellIterator = row.cellIterator();
-
-        while (cellIterator.hasNext()) {
-            Cell cell = cellIterator.next();
-            String cellValue = dataFormatter.formatCellValue(cell);
-            System.out.print(cellValue + "\t");
-        }
-        System.out.println();
-    }
-
-    workbook.close();
-}
-			return "";
-
+public static String readfile(String excelFilePath ) throws IOException {
+	  FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
+	     
+	    Workbook workBook = getWorkbook(inputStream, excelFilePath);
+	    Sheet firstSheet = workBook.getSheetAt(0);
+	    Row rows;
+	    for(int i =1;i<=firstSheet.getLastRowNum(); i++) {
+	    	 rows = (Row) firstSheet.getRow(i);
+//	    Iterator<Row> rows = firstSheet.iterator();
+//	     
+//	    while (rows.hasNext()) {
+//	        Row row = rows.next();
+	        Iterator<Cell> cells = rows.cellIterator();
+	        SinhVien book = new SinhVien();
+//	         
+	        while (cells.hasNext()) {
+	            Cell cell = cells.next();
+	            CellType columnIndex = cell.getCellType();
+	        	DataFormatter df = new DataFormatter();
+	            switch (columnIndex) {
+				case STRING:
+				System.out.println(cell.getStringCellValue() ) ;
+				break;
+		       case BOOLEAN:
+		    	   System.out.println(cell.getStringCellValue() ) ;
+		    	   break;
+		        case NUMERIC:
+		        	System.out.println(df.formatCellValue(cell)) ;
+		        	break;
+	            }
+	            
+	            }
+//	FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
+//	XSSFWorkbook wb = new XSSFWorkbook(inputStream);
+//	XSSFSheet sheet = wb.getSheetAt(0);
+//	DataFormatter df = new DataFormatter();
+//	for(Row row : sheet) {
+//		for(Cell cell : row) {
+//			switch (cell.getCellType()) {
+//			case STRING:
+//				System.out.println(cell.getStringCellValue() + "\t\t") ;
+//				break;
+//		       case BOOLEAN:
+//		    	   System.out.println(cell.getStringCellValue() + "\t\t") ;
+//		    	   break;
+//		        case NUMERIC:
+//		        	System.out.println(df.formatCellValue(cell) + "\t\t") ;
+//		        	break;
+//
+//
+//			}
+//		}
+//	}
+	    }
+	return excelFilePath;
 }
 private Object getCellValue(Cell cell) {
+	DataFormatter df = new DataFormatter();
+	FormulaEvaluator fe = null;
     switch (cell.getCellType()) {
         case STRING:
             return cell.getStringCellValue();
   
         case BOOLEAN:
             return cell.getBooleanCellValue();
-            
- 
-    
+        case NUMERIC:
+        	return df.formatCellValue(cell);
+        case FORMULA:
+        	return df.formatCellValue(cell,fe);
     }
   
     return null;
@@ -85,13 +110,16 @@ public List<SinhVien> readBooksFromExcelFile(String excelFilePath) throws IOExce
      
     Workbook workBook = getWorkbook(inputStream, excelFilePath);
     Sheet firstSheet = workBook.getSheetAt(0);
-    Iterator<Row> rows = firstSheet.iterator();
-     
-    while (rows.hasNext()) {
-        Row row = rows.next();
-        Iterator<Cell> cells = row.cellIterator();
+    Row rows;
+    for(int i =1;i<=firstSheet.getLastRowNum(); i++) {
+    	 rows = (Row) firstSheet.getRow(i);
+//    Iterator<Row> rows = firstSheet.iterator();
+//     
+//    while (rows.hasNext()) {
+//        Row row = rows.next();
+        Iterator<Cell> cells = rows.cellIterator();
         SinhVien book = new SinhVien();
-         
+//         
         while (cells.hasNext()) {
             Cell cell = cells.next();
             int columnIndex = cell.getColumnIndex();
@@ -157,19 +185,23 @@ private static Workbook getWorkbook(FileInputStream inputStream, String excelFil
 }
 
     public static void main(String[] args) throws IOException, InvalidFormatException, ClassNotFoundException, SQLException {
-    	String sql = "SELECT * FROM table_config";
-        ConnectionDB connect = new ConnectionDB();
+    	ConnectionDB connect = new ConnectionDB();
 	       Connection  connection = connect.loadProps();
+		String sql = "SELECT * FROM demo1.table_config";
 		PreparedStatement ps = connection.prepareStatement(sql);
-    	ResultSet rs = ps.executeQuery();
-    	while (rs.next()) {
-    		
-    		  String file1 = rs.getString("folder_local") + "\\" + rs.getString("file") ;
-    		  
+//		 ps.setInt(1, id);
+		  
+		ResultSet rs = ps.executeQuery();
+		while (rs.next()) {
+		String file1 = rs.getString(5) + "\\" + rs.getString(7);
+		 List<SinhVien> listBooks = new ReadFileExcel().readBooksFromExcelFile(file1);
+    		  System.out.println(file1);
     		  
     		  
     	ReadFileExcel rd = new ReadFileExcel();
-    System.out.println(rd.readFile(file1));
+//    System.out.println(listBooks);
+    
+    rd.readfile(file1);
     
     }
 }

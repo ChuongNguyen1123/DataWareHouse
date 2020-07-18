@@ -1,8 +1,16 @@
 package loadStaging ;
 
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import connectionDB.ConnectionDB;
+
 public class SinhVien {
-	int stt;
-	int maSV;
+	String stt;
+	String maSV;
 	String hoLot;
 	String ten;
 	String ngaySinh;
@@ -16,7 +24,7 @@ public class SinhVien {
 		super();
 	}
 
-	public SinhVien(int stt, int maSV, String hoLot, String ten, String ngaySinh, String maLop, String tenLop,
+	public SinhVien(String stt, String maSV, String hoLot, String ten, String ngaySinh, String maLop, String tenLop,
 			String dtLienLac, String email, String queQuan, String ghiChu) {
 		super();
 		this.stt = stt;
@@ -32,19 +40,19 @@ public class SinhVien {
 		this.ghiChu = ghiChu;
 	}
 
-	public int getStt() {
+	public String getStt() {
 		return stt;
 	}
 
-	public void setStt(int stt) {
+	public void setStt(String stt) {
 		this.stt = stt;
 	}
 
-	public int getMaSV() {
+	public String getMaSV() {
 		return maSV;
 	}
 
-	public void setMaSV(int maSV) {
+	public void setMaSV(String maSV) {
 		this.maSV = maSV;
 	}
 
@@ -123,6 +131,40 @@ public class SinhVien {
 	@Override
 	public String toString() {
 		return stt + "," + maSV + "," + hoLot + "," + ten + "," + ngaySinh + "," + maLop + "," + tenLop + "," + dtLienLac + "," + email + "," + queQuan + "," + ghiChu;
+	}
+	public static String[] getConfigInformation1() throws ClassNotFoundException, SQLException, IOException {
+		String[] line = new String[14];
+		ConnectionDB connect = new ConnectionDB();
+	       Connection  connection = connect.loadProps();
+		String sql = "SELECT * FROM sinhvien ";
+		PreparedStatement ps = connection.prepareStatement(sql);
+		ResultSet rs = ps.executeQuery();
+		while (rs.next()) {
+			line[0] = Integer.toString(rs.getInt("id"));
+			line[1] = rs.getString("stt");
+			line[2] = rs.getString("maSV");
+			line[3] = rs.getString("hoLot");
+			line[4] = rs.getString("ten");
+			line[5] = rs.getString("ngaySinh");
+			line[6] = rs.getString("maLop");
+			line[7] = rs.getString("tenLop");
+			line[8] = rs.getString("dtLienLac");
+			line[9] = rs.getString("email");
+			line[10] = rs.getString("queQuan");
+			line[11] = rs.getString("ghiChu");
+		
+		
+		}
+		connection.close();
+		return line;
+	}
+	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
+		String[] line = SinhVien.getConfigInformation1();
+		for (int i = 0; i < line.length; i++) {
+			System.out.println(line[i]);
+			
+		
+		}
 	}
 	
 }
