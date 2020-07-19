@@ -35,7 +35,7 @@ public class Datawarehouse {
 			boolean exist = false;
 			// *Get all name table in DW
 			PreparedStatement ps_getAllTableFromDW = connection2.prepareStatement(
-					"select TABLE_NAME from information_schema.TABLES where table_schema = 'database_warehouse'");
+					"select TABLE_NAME from information_schema.TABLES where table_schema = 'datawarehouse'");
 			ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
 			while (rs_getAllTableFromDW.next()) {
 				// *If table have been exist don't create
@@ -119,8 +119,9 @@ public class Datawarehouse {
 							}
 							ps_insertToDB.executeUpdate();
 							PreparedStatement ps_delete = connection1.prepareStatement("Delete from "
-									+ rs_getTable_Name.getString(2) + " where STT=" + rs_getFromStaging.getString(1));
+									+ rs_getTable_Name.getString(2) + " where " + rsmd_getFromStaging.getColumnName(1) + " ='" +rs_getFromStaging.getString(1) +"'");
 							ps_delete.executeUpdate();
+							System.out.println("Data have been copy!");
 							// send mail success
 						}
 					} else {
