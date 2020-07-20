@@ -33,7 +33,7 @@ public class LoadFile {
 		String sql = "select count(table_name) from  information_schema.`TABLES` where table_name ='"+table_name+"'";
 		PreparedStatement statement = null;
 		ResultSet res = null;
-		try {
+		try { 
 			PreparedStatement ps = connection.prepareStatement(sql);
 			res = ps.executeQuery();
 			while (res.next()) {
@@ -68,7 +68,7 @@ public class LoadFile {
 		ConnectionDB connect = new ConnectionDB();
 	       Connection  connection = connect.loadProps();
 	      
-		String sql = "CREATE TABLE demo2. "+table_name+" (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,";
+		String sql = "CREATE TABLE database_staging."+table_name+" (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,";
 		String[] col = column_list.split(",");
 		for(int i =0;i<col.length;i++) {
 			sql+=col[i]+" "+"varchar(100)"+ "  NULL,";
@@ -128,7 +128,7 @@ LoadFile load = new LoadFile();
 	       Connection  connection = connect.loadProps();
 	       try {
 	    	   if(colnum==11) {
-		 sql = "INSERT INTO demo2." + table_name + "(" + filed_name+")"+ "   VALUES(?,?,?,?,?,?,?,?,?,?,?) " ;
+		 sql = "INSERT INTO database_staging." + table_name + "(" + filed_name+")"+ "   VALUES(?,?,?,?,?,?,?,?,?,?,?) " ;
 		System.out.println(sql);
 	 ps = connection.prepareStatement(sql);
 		for (SinhVien book : listBooks) {
@@ -148,7 +148,7 @@ LoadFile load = new LoadFile();
 		}
 	    	   }
 	    	   if(colnum==7) {
-	    		   sql = "INSERT INTO demo2." + table_name + "(" + filed_name+")"+ "   VALUES(?,?,?,?,?,?,?) " ;
+	    		   sql = "INSERT INTO database_staging." + table_name + "(" + filed_name+")"+ "   VALUES(?,?,?,?,?,?,?) " ;
 	    			System.out.println(sql);
 	    		 ps = connection.prepareStatement(sql);
 	    			for (SinhVien book : listBooks) {
@@ -186,12 +186,12 @@ LoadFile load = new LoadFile();
 		PreparedStatement ps = connection.prepareStatement(sql);
 		ResultSet rs = ps.executeQuery();
 		while (rs.next()) {
-		String  column_list = rs.getString(10);
-		String file1 = rs.getString(6) + "\\" + rs.getString(8);
-		int col = rs.getInt(11);
-		String table_name = rs.getString(9);
-		String filed_name = rs.getString(10);	
-		String stt = rs.getString(15);
+		String  column_list = rs.getString("filed_name");
+		String file1 = rs.getString("folder_local") + "\\" + rs.getString("filename");
+		int col = rs.getInt("column");
+		String table_name = rs.getString("table_name");
+		String filed_name = rs.getString("filed_name");	
+		String stt = rs.getString("status");
 		   List<SinhVien> listBooks = new ReadFileExcel().readBooksFromExcelFile(file1);
 //		System.out.println(lf.createTable(table_name, column_list,stt));
 			System.out.println(lf.checkTableExist(table_name,column_list,stt));

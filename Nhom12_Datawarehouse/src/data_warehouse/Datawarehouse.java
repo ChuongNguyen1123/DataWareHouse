@@ -29,13 +29,14 @@ public class Datawarehouse {
 		Connection connection2 = connect2.loadProps();
 		// *Get name source and des
 		PreparedStatement ps_getFolderName = connection
-				.prepareStatement("Select source_folder,folder_local from table_config");
+				.prepareStatement("Select table_name,table_warehouse from table_config");
+		System.out.println("sssssssssssssssssssssssssss");
 		ResultSet rs_getFolderName = ps_getFolderName.executeQuery();
 		while (rs_getFolderName.next()) {
 			boolean exist = false;
 			// *Get all name table in DW
 			PreparedStatement ps_getAllTableFromDW = connection2.prepareStatement(
-					"select TABLE_NAME from information_schema.TABLES where table_schema = 'datawarehouse'");
+					"select TABLE_NAME from information_schema.TABLES where table_schema = 'database_warehouse'");
 			ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
 			while (rs_getAllTableFromDW.next()) {
 				// *If table have been exist don't create
@@ -77,7 +78,7 @@ public class Datawarehouse {
 		Connection connection2 = connect2.loadProps();
 
 		PreparedStatement ps_getTable_Name = connection
-				.prepareStatement("Select id,source_folder,folder_local from table_config ");
+				.prepareStatement("Select id,table_name,table_warehouse from table_config ");
 		ResultSet rs_getTable_Name = ps_getTable_Name.executeQuery();
 		while (rs_getTable_Name.next()) {
 			// *Get status of log

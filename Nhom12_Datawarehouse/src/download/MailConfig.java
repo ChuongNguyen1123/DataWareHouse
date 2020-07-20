@@ -1,4 +1,4 @@
-package model;
+package download;
 
 public class MailConfig {
 	  public static final String HOST_NAME = "smtp.gmail.com";
