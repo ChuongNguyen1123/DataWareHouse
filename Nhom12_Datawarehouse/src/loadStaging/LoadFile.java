@@ -132,7 +132,7 @@ LoadFile load = new LoadFile();
 	       Connection  connection = connect.loadProps();
 	       try {
 	    	   if(colnum==11) {
-		 sql = "INSERT INTO database_staging." + table_name + "(" + filed_name+")"+ "   VALUES(?,?,?,?,?,?,?,?,?,?,?) " ;
+		 sql = "INSERT INTO database_staging." + table_name + "(" + filed_name+")"+ " VALUES(?,?,?,?,?,?,?,?,?,?,?) " ;
 		System.out.println(sql);
 	 ps = connection.prepareStatement(sql);
 		for (SinhVien book : listBooks) {

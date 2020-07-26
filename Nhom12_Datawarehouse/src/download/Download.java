@@ -17,7 +17,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,11 +31,10 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-
 public class Download {
 	private String sid = null;
 	private String urlHttp, usernameDriver, passwordDriver, srcFolderDriver, desSRCLocal, kieuFile;
-	private String connectionURL, userName, passWord, sqlConfig, status;
+	private String connectionURL, userName, passWord, sqlConfig, status = "EOR";
 	private String sqlLog;
 	private Connection connection;
 	private LinkedList<String> listFileSource;
@@ -104,6 +106,14 @@ public class Download {
 
 	}
 
+	public static String getTime() {
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd -- HH:mm:ss");
+		Date date = new Date();
+//		System.out.println(df.format(date));
+		return df.format(date);
+
+	}
+
 	public LinkedList<String> listFiles() throws Exception {
 		if (sid != null) {
 //			listFileSource.clear();
@@ -148,16 +158,16 @@ public class Download {
 
 	public void down() throws Exception {
 		if (sid != null) {
-			int sumFile = 0;
+			int sumFile = 1;
 			LinkedList<String> lisFile = new LinkedList<>();
 			File file = new File(desSRCLocal);
+			status = "Download_OK";
 			if (file.listFiles().length == 0) {
-				status = "Download_OK";
 				lisFile = listFiles();
 			} else if (file.listFiles().length > 0) {
-				status = "Upload";
-				listSizeFileSource = listSizeFileCheck;
+//				status = "Upload";
 				lisFile = checkFile();
+				listSizeFileSource = listSizeFileCheck;
 			}
 
 			for (int i = 0; i < lisFile.size(); i++) {
@@ -180,14 +190,26 @@ public class Download {
 						while ((readData = in.read(buff)) > -1) {
 							out.write(buff, 0, readData);
 						}
-						LocalDate date = java.time.LocalDate.now();
+						int config_id = 1;
+//						LocalDate date = java.time.LocalDate.now();
 						String insertLog = sqlLog;
 						PreparedStatement pre = connection.prepareStatement(insertLog);
 						pre.setString(1, urlHttp + srcFolderDriver);
 						pre.setString(2, nameFile);
 						pre.setString(3, status);
 						pre.setInt(4, listSizeFileSource.get(i));
-						pre.setString(5, date.toString());
+//						pre.setString(5, date.toString());
+						pre.setString(5, getTime());
+						if (nameFile.contains("sinhvien")) {
+							config_id = 1;
+						} else if (nameFile.contains("monhoc")) {
+							config_id = 2;
+						} else if (nameFile.contains("dangky")) {
+							config_id = 4;
+						} else if (nameFile.contains("lophoc")) {
+							config_id = 5;
+						}
+						pre.setInt(6, config_id);
 						pre.execute();
 						System.out.println("Download file name: " + nameFile + "\t" + "size: "
 								+ listSizeFileSource.get(i) + "KB" + "\t" + status + "\t" + java.time.LocalDate.now());
@@ -244,9 +266,9 @@ public class Download {
 				nameDrive = lisFileDinhDang.get(j);
 				leng = (int) lf[l].length();
 				if (nameFile.equalsIgnoreCase(lf[l].getName())) {
-					if (listSizeFileCheck.get(j) != lf[l].length()) {
-						status = "UPLOAD";
-					}
+//					if (listSizeFileCheck.get(j) != lf[l].length()) {
+//						status = "UPLOAD";
+//					}
 					if (listSizeFileCheck.get(j) == lf[l].length()) {
 						lisFileDinhDang.remove(j);
 						listSizeFileCheck.remove(j);
