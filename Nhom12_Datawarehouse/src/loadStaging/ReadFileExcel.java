@@ -63,27 +63,6 @@ public static String readfile(String excelFilePath ) throws IOException {
 	            }
 	            
 	            }
-//	FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
-//	XSSFWorkbook wb = new XSSFWorkbook(inputStream);
-//	XSSFSheet sheet = wb.getSheetAt(0);
-//	DataFormatter df = new DataFormatter();
-//	for(Row row : sheet) {
-//		for(Cell cell : row) {
-//			switch (cell.getCellType()) {
-//			case STRING:
-//				System.out.println(cell.getStringCellValue() + "\t\t") ;
-//				break;
-//		       case BOOLEAN:
-//		    	   System.out.println(cell.getStringCellValue() + "\t\t") ;
-//		    	   break;
-//		        case NUMERIC:
-//		        	System.out.println(df.formatCellValue(cell) + "\t\t") ;
-//		        	break;
-//
-//
-//			}
-//		}
-//	}
 	    }
 	return excelFilePath;
 }
@@ -113,10 +92,6 @@ public List<SinhVien> readBooksFromExcelFile(String excelFilePath) throws IOExce
     Row rows;
     for(int i =1;i<=firstSheet.getLastRowNum(); i++) {
     	 rows = (Row) firstSheet.getRow(i);
-//    Iterator<Row> rows = firstSheet.iterator();
-//     
-//    while (rows.hasNext()) {
-//        Row row = rows.next();
         Iterator<Cell> cells = rows.cellIterator();
         SinhVien book = new SinhVien();
 //         
@@ -187,21 +162,18 @@ private static Workbook getWorkbook(FileInputStream inputStream, String excelFil
     public static void main(String[] args) throws IOException, InvalidFormatException, ClassNotFoundException, SQLException {
     	ConnectionDB connect = new ConnectionDB();
 	       Connection  connection = connect.loadProps();
-		String sql = "SELECT * FROM demo1.table_config";
+		String sql = "SELECT *  from databasecontroll.table_config c, databasecontroll.table_log l  where l.config_id = c.id ";
 		PreparedStatement ps = connection.prepareStatement(sql);
-//		 ps.setInt(1, id);
 		  
 		ResultSet rs = ps.executeQuery();
 		while (rs.next()) {
-		String file1 = rs.getString(5) + "\\" + rs.getString(7);
+		String file1 = rs.getString("folder_local") + "\\" + rs.getString("name_file");
 		 List<SinhVien> listBooks = new ReadFileExcel().readBooksFromExcelFile(file1);
-    		  System.out.println(file1);
-    		  
-    		  
-    	ReadFileExcel rd = new ReadFileExcel();
-//    System.out.println(listBooks);
-    
-    rd.readfile(file1);
+    		  System.out.println(listBooks);
+//    		  
+//    		  
+//    	ReadFileExcel rd = new ReadFileExcel();
+//    rd.readfile(file1);
     
     }
 }
