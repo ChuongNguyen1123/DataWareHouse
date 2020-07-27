@@ -29,10 +29,10 @@ public class Datawarehouse {
 		// *Connect to Datawarehouse
 		Connection connection2 = connect2.loadProps();
 		// *Get name source and des
-		PreparedStatement ps_getFolderName = connection
-				.prepareStatement("Select table_name,table_warehouse from table_config where id='" +id+"'");
-		ResultSet rs_getFolderName = ps_getFolderName.executeQuery();
-		while (rs_getFolderName.next()) {
+		PreparedStatement ps_getTableNameFromConfig = connection
+				.prepareStatement("Select table_name,table_warehouse from table_config where id='" + id + "'");
+		ResultSet rs_getTableNameFromConfig = ps_getTableNameFromConfig.executeQuery();
+		while (rs_getTableNameFromConfig.next()) {
 			boolean exist = false;
 			// *Get all name table in DW
 			PreparedStatement ps_getAllTableFromDW = connection2.prepareStatement(
@@ -40,24 +40,25 @@ public class Datawarehouse {
 			ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
 			while (rs_getAllTableFromDW.next()) {
 				// *If table have been exist don't create
-				if (rs_getFolderName.getString(2).equals(rs_getAllTableFromDW.getString(1))) {
+				if (rs_getTableNameFromConfig.getString(2).equals(rs_getAllTableFromDW.getString(1))) {
 					exist = true;
 				}
 			}
 			if (!exist) {
 				// *Get all in source
 				PreparedStatement ps_getFromSource = connection1
-						.prepareStatement("Select * from " + rs_getFolderName.getString(1));
+						.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(1));
 				ResultSet rs_getFromSource = ps_getFromSource.executeQuery();
 				ResultSetMetaData rsmd_getFromSoure = rs_getFromSource.getMetaData();
 				// *Get num of col in table source
 				int num_of_col = rsmd_getFromSoure.getColumnCount();
 				// *Create sql to create database
 				String sql = "Create table ";
-				sql += rs_getFolderName.getString(2) + "(";
+				sql += rs_getTableNameFromConfig.getString(2) + "(";
 				for (int i = 1; i < num_of_col + 1; i++) {
 					if (i == num_of_col) {
-						sql += rsmd_getFromSoure.getColumnName(i).replaceAll(" ", "").replaceAll("/", "") + " varchar(255))";
+						sql += rsmd_getFromSoure.getColumnName(i).replaceAll(" ", "").replaceAll("/", "")
+								+ " varchar(255))";
 						break;
 					}
 					String col_name = rsmd_getFromSoure.getColumnName(i).replaceAll(" ", "").replaceAll("/", "");
@@ -69,20 +70,21 @@ public class Datawarehouse {
 			} else {
 				System.out.println("Table da ton tai!");
 			}
+		}
 	}
-	}
+
 	public void copyToDataWarehouse(int id) throws ClassNotFoundException, IOException, SQLException {
 		Connection connection = connect.loadProps();
 		Connection connection1 = connect1.loadProps();
 		Connection connection2 = connect2.loadProps();
 
-		PreparedStatement ps_getTable_Name = connection
-				.prepareStatement("Select id,table_name,table_warehouse from table_config where id='" +id+"'");
-		ResultSet rs_getTable_Name = ps_getTable_Name.executeQuery();
-		while (rs_getTable_Name.next()) {
+		PreparedStatement ps_getTableNameFromConfig = connection
+				.prepareStatement("Select id,table_name,table_warehouse from table_config where id='" + id + "'");
+		ResultSet rs_getTableNameFromConfig = ps_getTableNameFromConfig.executeQuery();
+		while (rs_getTableNameFromConfig.next()) {
 			// *Get status of log
-			PreparedStatement ps_getStatus = connection.prepareStatement(
-					"Select status from table_log where id = '" + id + "'");
+			PreparedStatement ps_getStatus = connection
+					.prepareStatement("Select status from table_log where id = '" + id + "'");
 			ResultSet rs_getStatus = ps_getStatus.executeQuery();
 			while (rs_getStatus.next()) {
 				// *Check status
@@ -90,21 +92,24 @@ public class Datawarehouse {
 
 					// *Get all of staging
 					PreparedStatement ps_getFromStaging = connection1
-							.prepareStatement("Select * from " + rs_getTable_Name.getString(2));
+							.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(2));
 					ResultSet rs_getFromStaging = ps_getFromStaging.executeQuery();
 					ResultSetMetaData rsmd_getFromStaging = rs_getFromStaging.getMetaData();
+					// *Count col of staging
 					int colOfStaging = rsmd_getFromStaging.getColumnCount();
 
 					// *Get all of DW
 					PreparedStatement ps_getFromDW = connection2
-							.prepareStatement("Select * from " + rs_getTable_Name.getString(3));
+							.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(3));
 
 					ResultSet rs_getFromDW = ps_getFromDW.executeQuery();
 					ResultSetMetaData rsmd_getFromDW = rs_getFromDW.getMetaData();
+					// *Count col of dw
 					int colOfDW = rsmd_getFromDW.getColumnCount();
 					// *Check col of 2 database
 					if (colOfDW == colOfStaging) {
-						String sql = "Insert into " + rs_getTable_Name.getString(3) + " values(";
+						// * Create sql to copy
+						String sql = "Insert into " + rs_getTableNameFromConfig.getString(3) + " values(";
 						for (int i = 1; i < colOfDW + 1; i++) {
 							if (i == colOfDW) {
 								sql += "?)";
@@ -113,13 +118,17 @@ public class Datawarehouse {
 							sql += "?,";
 						}
 						while (rs_getFromStaging.next()) {
+							// Insert into dw
 							PreparedStatement ps_insertToDB = connection2.prepareStatement(sql);
 							for (int i = 1; i < colOfDW + 1; i++) {
 								ps_insertToDB.setString(i, rs_getFromStaging.getString(i));
 							}
 							ps_insertToDB.executeUpdate();
-							PreparedStatement ps_delete = connection1.prepareStatement("Delete from "
-									+ rs_getTable_Name.getString(2) + " where " + rsmd_getFromStaging.getColumnName(1) + " ='" +rs_getFromStaging.getString(1) +"'");
+							// *Delete
+							PreparedStatement ps_delete = connection1
+									.prepareStatement("Delete from " + rs_getTableNameFromConfig.getString(2)
+											+ " where " + rsmd_getFromStaging.getColumnName(1) + " ='"
+											+ rs_getFromStaging.getString(1) + "'");
 							ps_delete.executeUpdate();
 							System.out.println("Du lieu da duoc copy!");
 							// send mail success
@@ -138,12 +147,12 @@ public class Datawarehouse {
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
 		Datawarehouse d = new Datawarehouse();
-		while(true){
-		System.out.println("Nhap id:");
-		Scanner sc= new Scanner(System.in);
-		int id = sc.nextInt();
-		d.createDatabase(id);
-		d.copyToDataWarehouse(id);
-	}
+		while (true) {
+			System.out.println("Nhap id:");
+			Scanner sc = new Scanner(System.in);
+			int id = sc.nextInt();
+			d.createDatabase(id);
+			d.copyToDataWarehouse(id);
+		}
 	}
 }
