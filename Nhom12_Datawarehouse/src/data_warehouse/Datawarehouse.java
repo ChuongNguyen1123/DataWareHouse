@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Scanner;
 
 import com.mysql.cj.jdbc.DatabaseMetaData;
 
@@ -20,7 +21,7 @@ public class Datawarehouse {
 	// *connection1 connect to Staging
 	// *connection2 connect to Datawarehouse
 
-	public void createDatabase() throws ClassNotFoundException, IOException, SQLException {
+	public void createDatabase(int id) throws ClassNotFoundException, IOException, SQLException {
 		// *Connect to Control
 		Connection connection = connect.loadProps();
 		// *Connect to Staging
@@ -29,8 +30,7 @@ public class Datawarehouse {
 		Connection connection2 = connect2.loadProps();
 		// *Get name source and des
 		PreparedStatement ps_getFolderName = connection
-				.prepareStatement("Select table_name,table_warehouse from table_config");
-		System.out.println("sssssssssssssssssssssssssss");
+				.prepareStatement("Select table_name,table_warehouse from table_config where id='" +id+"'");
 		ResultSet rs_getFolderName = ps_getFolderName.executeQuery();
 		while (rs_getFolderName.next()) {
 			boolean exist = false;
@@ -57,33 +57,32 @@ public class Datawarehouse {
 				sql += rs_getFolderName.getString(2) + "(";
 				for (int i = 1; i < num_of_col + 1; i++) {
 					if (i == num_of_col) {
-						sql += rsmd_getFromSoure.getColumnName(i) + " varchar(255))";
+						sql += rsmd_getFromSoure.getColumnName(i).replaceAll(" ", "").replaceAll("/", "") + " varchar(255))";
 						break;
 					}
-					String col_name = rsmd_getFromSoure.getColumnName(i);
+					String col_name = rsmd_getFromSoure.getColumnName(i).replaceAll(" ", "").replaceAll("/", "");
 					sql += col_name + " varchar(255),";
 				}
 				PreparedStatement ps_createDB = connection2.prepareStatement(sql);
 				ps_createDB.executeUpdate();
-				System.out.println("Success");
+				System.out.println("Tao table thanh cong!");
 			} else {
-				System.out.println("Database is already exist");
+				System.out.println("Table da ton tai!");
 			}
-		}
 	}
-
-	public void copyToDataWarehouse() throws ClassNotFoundException, IOException, SQLException {
+	}
+	public void copyToDataWarehouse(int id) throws ClassNotFoundException, IOException, SQLException {
 		Connection connection = connect.loadProps();
 		Connection connection1 = connect1.loadProps();
 		Connection connection2 = connect2.loadProps();
 
 		PreparedStatement ps_getTable_Name = connection
-				.prepareStatement("Select id,table_name,table_warehouse from table_config ");
+				.prepareStatement("Select id,table_name,table_warehouse from table_config where id='" +id+"'");
 		ResultSet rs_getTable_Name = ps_getTable_Name.executeQuery();
 		while (rs_getTable_Name.next()) {
 			// *Get status of log
 			PreparedStatement ps_getStatus = connection.prepareStatement(
-					"Select status from table_log where id = '" + rs_getTable_Name.getString(1) + "'");
+					"Select status from table_log where id = '" + id + "'");
 			ResultSet rs_getStatus = ps_getStatus.executeQuery();
 			while (rs_getStatus.next()) {
 				// *Check status
@@ -122,7 +121,7 @@ public class Datawarehouse {
 							PreparedStatement ps_delete = connection1.prepareStatement("Delete from "
 									+ rs_getTable_Name.getString(2) + " where " + rsmd_getFromStaging.getColumnName(1) + " ='" +rs_getFromStaging.getString(1) +"'");
 							ps_delete.executeUpdate();
-							System.out.println("Data have been copy!");
+							System.out.println("Du lieu da duoc copy!");
 							// send mail success
 						}
 					} else {
@@ -139,7 +138,12 @@ public class Datawarehouse {
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
 		Datawarehouse d = new Datawarehouse();
-		d.createDatabase();
-		d.copyToDataWarehouse();
+		while(true){
+		System.out.println("Nhap id:");
+		Scanner sc= new Scanner(System.in);
+		int id = sc.nextInt();
+		d.createDatabase(id);
+		d.copyToDataWarehouse(id);
+	}
 	}
 }
