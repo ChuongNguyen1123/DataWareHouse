@@ -16,32 +16,29 @@ public class Datawarehouse {
 	ConnectionDB1 connect1 = new ConnectionDB1();
 	ConnectionDB2 connect2 = new ConnectionDB2();
 	Properties pros = new Properties();
-	// *connection connect to Control
-	// *connection1 connect to Staging
-	// *connection2 connect to Datawarehouse
+	// *connection ket noi Control
+	// *connection1 ket noi Staging
+	// *connection2 ket noi Datawarehouse
 
 	public void createDatabase(int id) throws ClassNotFoundException, IOException, SQLException {
-		// *Connect to Control
 		Connection connection = connect.loadProps();
-		// *Connect to Staging
 		Connection connection1 = connect1.loadProps();
-		// *Connect to Datawarehouse
 		Connection connection2 = connect2.loadProps();
 		FileInputStream f = new FileInputStream("src/data_warehouse/dms_config.properties");
 		pros.load(f);
-		final String DATABASE_1 = pros.getProperty("database1");
 		final String DATABASE_2 = pros.getProperty("database2");
 		final String DATABASE_3 = pros.getProperty("database3");
 		int countTableInStaging = 0;
 		int count = 0;
-		// *Get name in staging and datawarehouse
+		// *Lay ten cua table trong staging va trong datawarehouse tu
+		// table_config
 		PreparedStatement ps_getTableNameFromConfig = connection
 				.prepareStatement("Select table_name,table_warehouse from table_config where id='" + id + "'");
 		ResultSet rs_getTableNameFromConfig = ps_getTableNameFromConfig.executeQuery();
 		while (rs_getTableNameFromConfig.next()) {
 			boolean exist = false;
-			// *Check in staging
-			// Get all name table in staging
+			// *Kiem tra trong staging
+			// *Lay tat ca cac ten cua table trong staging
 			PreparedStatement ps_getTableNameOfStaging = connection1.prepareStatement(
 					"select TABLE_NAME from information_schema.TABLES where table_schema = '" + DATABASE_2 + "'");
 			ResultSet rs_getTableNameOfStaging = ps_getTableNameOfStaging.executeQuery();
@@ -50,29 +47,28 @@ public class Datawarehouse {
 				count++;
 				if (rs_getTableNameOfStaging.getString(1).equals(rs_getTableNameFromConfig.getString(1))) {
 					count--;
-					// *Get all name table in DW
+					// *Lay tat ca cac ten table trong datawarehouse
 					PreparedStatement ps_getAllTableFromDW = connection2
 							.prepareStatement("select TABLE_NAME from information_schema.TABLES where table_schema = '"
 									+ DATABASE_3 + "'");
 					ResultSet rs_getAllTableFromDW = ps_getAllTableFromDW.executeQuery();
 					while (rs_getAllTableFromDW.next()) {
-						// *If the table exists then do not create
-						if (rs_getTableNameFromConfig.getString(2).replaceAll(" ", "")
-								.equals(rs_getAllTableFromDW.getString(1))) {
+						// *Kiem tra table co ton tai hay chua
+						if (rs_getTableNameFromConfig.getString(2).equals(rs_getAllTableFromDW.getString(1))) {
 							// *Already exist
 							exist = true;
 						}
 					}
-					// *Create table
+					// *Tao table
 					if (!exist) {
-						// *Get all in source
+						// *Lay tat ca cua table staging
 						PreparedStatement ps_getFromSource = connection1
 								.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(1));
 						ResultSet rs_getFromSource = ps_getFromSource.executeQuery();
 						ResultSetMetaData rsmd_getFromSoure = rs_getFromSource.getMetaData();
-						// *Get num of col in table source
+						// *Lay tong so cot cua table staging
 						int num_of_col = rsmd_getFromSoure.getColumnCount();
-						// *Create sql to create database
+						// *Tao cau sql
 						String sql = "Create table ";
 						sql += rs_getTableNameFromConfig.getString(2).replaceAll(" ", "") + "(";
 						for (int i = 1; i < num_of_col + 1; i++) {
@@ -101,11 +97,8 @@ public class Datawarehouse {
 	}
 
 	public void copyToDataWarehouse(int id) throws ClassNotFoundException, IOException, SQLException {
-		// *Connect to Control
 		Connection connection = connect.loadProps();
-		// *Connect to Staging
 		Connection connection1 = connect1.loadProps();
-		// *Connect to Datawarehouse
 		Connection connection2 = connect2.loadProps();
 		FileInputStream f = new FileInputStream("src/data_warehouse/dms_config.properties");
 		pros.load(f);
@@ -115,31 +108,29 @@ public class Datawarehouse {
 				.prepareStatement("Select id,table_name,table_warehouse from table_config where id='" + id + "'");
 		ResultSet rs_getTableNameFromConfig = ps_getTableNameFromConfig.executeQuery();
 		while (rs_getTableNameFromConfig.next()) {
-			// *Check staging
+			// *Kiem tra co ton tai trong staging
 			PreparedStatement ps_getTableNameOfStaging = connection1.prepareStatement(
 					"select TABLE_NAME from information_schema.TABLES where table_schema = '" + DATABASE_2 + "'");
 			ResultSet rs_getTableNameOfStaging = ps_getTableNameOfStaging.executeQuery();
 			while (rs_getTableNameOfStaging.next()) {
 				if (rs_getTableNameOfStaging.getString(1).equals(rs_getTableNameFromConfig.getString(2))) {
-					// *Get all of table staging
+					// *Lay tat ca trong staging
 					PreparedStatement ps_getFromStaging = connection1
 							.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(2));
 					ResultSet rs_getFromStaging = ps_getFromStaging.executeQuery();
 					ResultSetMetaData rsmd_getFromStaging = rs_getFromStaging.getMetaData();
-					// *Count col of staging
+					// *Dem so cot cua table trong staging
 					int colOfStaging = rsmd_getFromStaging.getColumnCount();
-
-					// *Get all of DW
+					// *Lay tat ca trong datawarehouse
 					PreparedStatement ps_getFromDW = connection2
 							.prepareStatement("Select * from " + rs_getTableNameFromConfig.getString(3));
-
 					ResultSet rs_getFromDW = ps_getFromDW.executeQuery();
 					ResultSetMetaData rsmd_getFromDW = rs_getFromDW.getMetaData();
-					// *Count col of dw
+					// *Dem so cot cua table trong datawarehouse
 					int colOfDW = rsmd_getFromDW.getColumnCount();
-					// *Check col of 2 database
+					// *Kiem tra 2 cot
 					if (colOfDW == colOfStaging) {
-						// * Create sql to copy
+						// *Neu 2 cot bang nhau
 						String sql = "Insert into " + rs_getTableNameFromConfig.getString(3) + " values(";
 						for (int i = 1; i < colOfDW + 1; i++) {
 							if (i == colOfDW) {
@@ -149,23 +140,22 @@ public class Datawarehouse {
 							sql += "?,";
 						}
 						while (rs_getFromStaging.next()) {
-							// Insert into dw
+							// *Them du lieu vao datawarehouse
 							PreparedStatement ps_insertToDB = connection2.prepareStatement(sql);
 							for (int i = 1; i < colOfDW + 1; i++) {
 								ps_insertToDB.setString(i, rs_getFromStaging.getString(i));
 							}
 							ps_insertToDB.executeUpdate();
-							// *Delete
+							// *Xoa
 							PreparedStatement ps_delete = connection1
 									.prepareStatement("Delete from " + rs_getTableNameFromConfig.getString(2)
 											+ " where " + rsmd_getFromStaging.getColumnName(1) + " ='"
 											+ rs_getFromStaging.getString(1) + "'");
 							ps_delete.executeUpdate();
 							System.out.println("Du lieu da duoc copy!");
-							// send mail success
 						}
 					} else {
-						// *Send mail fail because not same number of column
+						System.out.println("Khong copy");
 					}
 				}
 			}
