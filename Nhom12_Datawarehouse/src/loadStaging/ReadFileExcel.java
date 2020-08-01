@@ -31,149 +31,122 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import connectionDB.ConnectionDB;
 
 public class ReadFileExcel {
-public static String readfile(String excelFilePath ) throws IOException {
-	  FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
-	     
-	    Workbook workBook = getWorkbook(inputStream, excelFilePath);
-	    Sheet firstSheet = workBook.getSheetAt(0);
-	    Row rows;
-	    for(int i =1;i<=firstSheet.getLastRowNum(); i++) {
-	    	 rows = (Row) firstSheet.getRow(i);
-//	    Iterator<Row> rows = firstSheet.iterator();
-//	     
-//	    while (rows.hasNext()) {
-//	        Row row = rows.next();
-	        Iterator<Cell> cells = rows.cellIterator();
-	        SinhVien book = new SinhVien();
-//	         
-	        while (cells.hasNext()) {
-	            Cell cell = cells.next();
-	            CellType columnIndex = cell.getCellType();
-	        	DataFormatter df = new DataFormatter();
-	            switch (columnIndex) {
-				case STRING:
-				System.out.println(cell.getStringCellValue() ) ;
-				break;
-		       case BOOLEAN:
-		    	   System.out.println(cell.getStringCellValue() ) ;
-		    	   break;
-		        case NUMERIC:
-		        	System.out.println(df.formatCellValue(cell)) ;
-		        	break;
-	            }
-	            
-	            }
-	    }
-	return excelFilePath;
-}
+	//Định dạng các giá trị trong file
 private Object getCellValue(Cell cell) {
 	DataFormatter df = new DataFormatter();
+	//Tính toán giá trị ô cho bởi công thức đó
 	FormulaEvaluator fe = null;
     switch (cell.getCellType()) {
+    //Định dạng chuỗi
         case STRING:
             return cell.getStringCellValue();
-  
         case BOOLEAN:
             return cell.getBooleanCellValue();
+            //Định dạng số
         case NUMERIC:
         	return df.formatCellValue(cell);
+        	//đinh dạng công thức
         case FORMULA:
         	return df.formatCellValue(cell,fe);
     }
   
     return null;
 }
-public List<SinhVien> readBooksFromExcelFile(String excelFilePath) throws IOException {
-    List<SinhVien> listBooks = new ArrayList<SinhVien>();
+public List<SinhVien> readFileFromExcelFile(String excelFilePath) throws IOException {
+    List<SinhVien> listSV = new ArrayList<SinhVien>();
+    //Lấy 1 file excel
     FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
-     
+     //tạo workBook chỉ đến file excel
     Workbook workBook = getWorkbook(inputStream, excelFilePath);
+    //Lấy ra sheet đầu tiên từ workBook
     Sheet firstSheet = workBook.getSheetAt(0);
     Row rows;
+    //Lấy từ dòng thứ 2
     for(int i =1;i<=firstSheet.getLastRowNum(); i++) {
     	 rows = (Row) firstSheet.getRow(i);
+    	 //Lấy ra  Iterator cho tất cả các cell của dòng hiện tại
         Iterator<Cell> cells = rows.cellIterator();
-        SinhVien book = new SinhVien();
-//         
+        SinhVien sinhvien = new SinhVien();       
         while (cells.hasNext()) {
             Cell cell = cells.next();
             int columnIndex = cell.getColumnIndex();
-             
+            //đọc dữ liệu 
             switch (columnIndex) {
                 case 0:
-                    book.setStt((String) getCellValue(cell));
+                	sinhvien.setStt((String) getCellValue(cell));
                     break;
                 case 1:
-                    book.setMaSV((String) getCellValue(cell));
+                	sinhvien.setMaSV((String) getCellValue(cell));
                     break;
                 case 2:
-                    book.setHoLot((String) getCellValue(cell));
+                	sinhvien.setHoLot((String) getCellValue(cell));
                     break;
                 case 3:
-                    book.setTen((String) getCellValue(cell));
+                	sinhvien.setTen((String) getCellValue(cell));
                     break;
                 case 4:
-                    book.setNgaySinh((String) getCellValue(cell));
+                	sinhvien.setNgaySinh((String) getCellValue(cell));
                     break;
                 case 5:
-                    book.setMaLop((String) getCellValue(cell));
+                	sinhvien.setMaLop((String) getCellValue(cell));
                     break;
                 case 6:
-                    book.setTenLop((String) getCellValue(cell));
+                	sinhvien.setTenLop((String) getCellValue(cell));
                     break;
                 case 7:
-                    book.setDtLienLac((String) getCellValue(cell));
+                	sinhvien.setDtLienLac((String) getCellValue(cell));
                     break;
                 case 8:
-                    book.setEmail((String) getCellValue(cell));
+                	sinhvien.setEmail((String) getCellValue(cell));
                     break;
                 case 9:
-                    book.setQueQuan((String) getCellValue(cell));
+                	sinhvien.setQueQuan((String) getCellValue(cell));
                     break;
                 case 10:
-                    book.setGhiChu((String) getCellValue(cell));
+                	sinhvien.setGhiChu((String) getCellValue(cell));
                     break;
             }
         }
-        listBooks.add(book);
+        listSV.add(sinhvien);
     }
      
     workBook.close();
     inputStream.close();
      
-    return listBooks;
+    return listSV;
 }
  
- 
+ //được sử dụng để có thể  đọc được cả đinh dạng .xlsx và .xls
 private static Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
     Workbook workbook = null;
-  
+  //Nếu đuôi file là .xlsx và .xls thì đọc file
     if (excelFilePath.endsWith("xlsx")) {
         workbook = new XSSFWorkbook(inputStream);
     } else if (excelFilePath.endsWith("xls")) {
         workbook = new HSSFWorkbook(inputStream);
+        //Nếu không thì không đọc file
     } else {
-        throw new IllegalArgumentException("The specified file is not Excel file");
+        throw new IllegalArgumentException("Không thể đọc file");
     }
   
     return workbook;
 }
 
     public static void main(String[] args) throws IOException, InvalidFormatException, ClassNotFoundException, SQLException {
+    	//Kết nối database
     	ConnectionDB connect = new ConnectionDB();
 	       Connection  connection = connect.loadProps();
+	       //Lấy danh sách trong bảng log và config
 		String sql = "SELECT *  from databasecontroll.table_config c, databasecontroll.table_log l  where l.config_id = c.id ";
+		
 		PreparedStatement ps = connection.prepareStatement(sql);
-		  
+		  //Láy giá trị trong database
 		ResultSet rs = ps.executeQuery();
 		while (rs.next()) {
 		String file1 = rs.getString("folder_local") + "\\" + rs.getString("name_file");
-		 List<SinhVien> listBooks = new ReadFileExcel().readBooksFromExcelFile(file1);
-    		  System.out.println(listBooks);
-//    		  
-//    		  
-//    	ReadFileExcel rd = new ReadFileExcel();
-//    rd.readfile(file1);
+		 List<SinhVien> listSV = new ReadFileExcel().readFileFromExcelFile(file1);
+    		  System.out.println(listSV);
+
     
     }
 }
