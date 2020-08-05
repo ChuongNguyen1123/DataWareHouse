@@ -43,9 +43,6 @@ public class CopyToWarehouse {
 			ResultSet rs_getAllFromDW = ps_getAllFromDW.executeQuery();
 			// Lay ra so cot cua table trong DW
 			ResultSetMetaData rsmd_getAllFromDW = rs_getAllFromDW.getMetaData();
-//			for(int i =1;i<6;i++){
-//			System.out.println(rsmd_getAllFromDW.getColumnTypeName(i));
-//			}
 			int countColOfDW = rsmd_getAllFromDW.getColumnCount();
 			// Neu 2 cot cung so cot thi tinh tiep
 			if (countColOfDW == countColOfStaging) {
