@@ -28,7 +28,6 @@ public class CopyToWarehouse {
 				.prepareStatement("SELECT table_name,table_warehouse FROM table_config where id = " + id);
 		ResultSet rs_getDataFromConfig = ps_getDataFromConfig.executeQuery();
 		while (rs_getDataFromConfig.next()) {
-
 			// Lay het cac du lieu trong staging
 			PreparedStatement ps_getAllFromStaging = connection1
 					.prepareStatement("SELECT * FROM " + rs_getDataFromConfig.getString(1));
@@ -71,18 +70,18 @@ public class CopyToWarehouse {
 						for (int i = 1; i < count + 1; i++) {
 							// Neu cot co kieu du lieu la int
 							if (rsmd_getAllFromDW.getColumnTypeName(i).contains("INT")) {
-								//Neu du lieu trong 
+								// Neu du lieu trong
 								if (rs_getAllFromStaging.getString(i) == null
 										|| rs_getAllFromStaging.getString(i).equals("")
 										|| rs_getAllFromStaging.getString(i).equals(" ")) {
-									ps_copyToDW.setInt(i, -999);
+									ps_copyToDW.setInt(i, 0);
 								} else {
 									ps_copyToDW.setInt(i, convertToInt(rs_getAllFromStaging.getString(i)));
 								}
 							}
 							// Neu cot co kieu du lieu la varchar
 							if (rsmd_getAllFromDW.getColumnTypeName(i).contains("VARCHAR")) {
-								//Neu du lieu trong 
+								// Neu du lieu trong
 								if (rs_getAllFromStaging.getString(i) == null
 										|| rs_getAllFromStaging.getString(i).equals("")
 										|| rs_getAllFromStaging.getString(i).equals(" ")) {
@@ -93,29 +92,31 @@ public class CopyToWarehouse {
 							}
 							// Neu cot co kieu du lieu la date
 							if (rsmd_getAllFromDW.getColumnTypeName(i).contains("DATE")) {
-								//Neu du lieu trong 
+								// Neu du lieu trong
+//								System.out.println(convertToYMD(rs_getAllFromStaging.getString(i)));
 								if (rs_getAllFromStaging.getString(i) == null
 										|| rs_getAllFromStaging.getString(i).equals("")
 										|| rs_getAllFromStaging.getString(i).equals(" ")) {
 									ps_copyToDW.setDate(i, convertToDate("1970-1-1"));
 								} else {
-									ps_copyToDW.setDate(i, convertToDate(rs_getAllFromStaging.getString(i)));
+									ps_copyToDW.setDate(i,
+											convertToDate(convertToYMD(rs_getAllFromStaging.getString(i))));
 								}
 							}
 						}
 						ps_copyToDW.executeUpdate();
-						//Xoa trong staging
+						// Xoa trong staging
 						PreparedStatement ps_deleteInStaging = connection1
 								.prepareStatement("Delete from " + rs_getDataFromConfig.getString(1) + " where "
 										+ rsmd_getAllFromStaging.getColumnName(1) + " ='"
 										+ rs_getAllFromStaging.getInt(1) + "'");
 						ps_deleteInStaging.executeUpdate();
 					}
-					//Update copy thanh cong len isSuccess
+					// Update copy thanh cong len isSuccess
 					PreparedStatement ps_setSuccess = connection
 							.prepareStatement("UPDATE table_config set is_Success ='Success' where id=" + id);
 					ps_setSuccess.executeUpdate();
-					//Update thoi gian copy
+					// Update thoi gian copy
 					PreparedStatement ps_setTimeUpdate = connection.prepareStatement(
 							"UPDATE table_config set timeCopy  ='" + getTime() + "' " + "where id=" + id);
 					ps_setTimeUpdate.executeUpdate();
@@ -133,11 +134,72 @@ public class CopyToWarehouse {
 		return Integer.parseInt(type);
 	}
 
+	// Chuyen ve Y-M-D
+	public String convertToYMD(String time) {
+		String first = "";
+		// Neu la kieu String co dau phan cach la /
+		if (time.contains("/")) {
+			String[] list = time.split("/");
+			for (String s : list) {
+				first += s;
+				break;
+			}
+			if (Integer.parseInt(first) > 1900) {
+				time.replaceAll("/", "-");
+				return time;
+			} else {
+				String day = "";
+				String month = "";
+				String year = "";
+				for (String s : list) {
+					if (day.equals("")) {
+						day += s;
+					} else if (month.equals("") && !day.equals("")) {
+						month += s;
+					} else if (year.equals("") && !day.equals("") && !month.equals("")) {
+						year += s;
+						return year + "-" + month + "-" + day;
+					}
+				}
+			}
+
+			// Neu la kieu String co dau phan cach la /
+		}
+		if (time.contains("-")) {
+			String[] list = time.split("-");
+			for (String s : list) {
+				first += s;
+				break;
+			}
+			if (Integer.parseInt(first) > 1900) {
+				return time;
+			} else {
+				String day = "";
+				String month = "";
+				String year = "";
+				for (String s : list) {
+					if (day.equals("")) {
+						day += s;
+					} else if (month.equals("") && !day.equals("")) {
+						month += s;
+					} else if (year.equals("") && !day.equals("") && !month.equals("")) {
+						year += s;
+						return year + "-" + month + "-" + day;
+					}
+				}
+			}
+
+		}
+		return time;
+	}
+
+	// Chuyen ve time trong sql
 	public Date convertToDate(String time) {
 		Date date = Date.valueOf(time);
 		return date;
 	}
 
+	// Lay thoi gian hien thoi
 	public Timestamp getTime() {
 		java.util.Date now = new java.util.Date();
 		Timestamp timestamp = new Timestamp(now.getTime());
@@ -145,7 +207,7 @@ public class CopyToWarehouse {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
-		Datawarehouse d = new Datawarehouse();
+		CopyToWarehouse d = new CopyToWarehouse();
 		while (true) {
 			System.out.println("Nhap id:");
 			Scanner sc = new Scanner(System.in);
