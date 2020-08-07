@@ -31,27 +31,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import connectionDB.ConnectionDB;
 
 public class ReadFileExcel {
-	//Định dạng các giá trị trong file
-private Object getCellValue(Cell cell) {
-	DataFormatter df = new DataFormatter();
-	//Tính toán giá trị ô cho bởi công thức đó
-	FormulaEvaluator fe = null;
-    switch (cell.getCellType()) {
-    //Định dạng chuỗi
-        case STRING:
-            return cell.getStringCellValue();
-        case BOOLEAN:
-            return cell.getBooleanCellValue();
-            //Định dạng số
-        case NUMERIC:
-        	return df.formatCellValue(cell);
-        	//đinh dạng công thức
-        case FORMULA:
-        	return df.formatCellValue(cell,fe);
-    }
-  
-    return null;
-}
+
+//Bước 3.Đọc file
 public List<SinhVien> readFileFromExcelFile(String excelFilePath) throws IOException {
     List<SinhVien> listSV = new ArrayList<SinhVien>();
     //Lấy 1 file excel
@@ -115,7 +96,27 @@ public List<SinhVien> readFileFromExcelFile(String excelFilePath) throws IOExcep
      
     return listSV;
 }
- 
+//Định dạng các giá trị trong file
+private Object getCellValue(Cell cell) {
+DataFormatter df = new DataFormatter();
+//Tính toán giá trị ô cho bởi công thức đó
+FormulaEvaluator fe = null;
+switch (cell.getCellType()) {
+//Định dạng chuỗi
+    case STRING:
+        return cell.getStringCellValue();
+    case BOOLEAN:
+        return cell.getBooleanCellValue();
+        //Định dạng số
+    case NUMERIC:
+    	return df.formatCellValue(cell);
+    	//đinh dạng công thức
+    case FORMULA:
+    	return df.formatCellValue(cell,fe);
+}
+
+return null;
+}
  //được sử dụng để có thể  đọc được cả đinh dạng .xlsx và .xls
 private static Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
     Workbook workbook = null;
@@ -137,7 +138,7 @@ private static Workbook getWorkbook(FileInputStream inputStream, String excelFil
     	ConnectionDB connect = new ConnectionDB();
 	       Connection  connection = connect.loadProps();
 	       //Lấy danh sách trong bảng log và config
-		String sql = "SELECT *  from databasecontroll.table_config c, databasecontroll.table_log l  where l.config_id = c.id ";
+		String sql = "SELECT *  from table_config c, databasecontroll.table_log l  where l.config_id = c.id ";
 		
 		PreparedStatement ps = connection.prepareStatement(sql);
 		  //Láy giá trị trong database

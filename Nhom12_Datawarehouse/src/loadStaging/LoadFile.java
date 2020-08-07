@@ -26,70 +26,52 @@ import connectionDB.ConnectionDB;
 import download.SendMailSSL;
 
 public class LoadFile {
-//Tạo bảng
-	public boolean createTable(String table_name, String filed_name, String stt)
-			throws ClassNotFoundException, SQLException, IOException {
-		// Kết nối với database
-		ConnectionDB connect = new ConnectionDB();
-		Connection connection = connect.loadProps();
-		String sql = "CREATE TABLE if not exists database_staging." + table_name
-				+ " (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,";
-		String[] col = filed_name.split(",");
-		// duyệt các thuộc tính
-		for (int i = 0; i < col.length; i++) {
-			// nếu không phải là thuộc tính cuối cùng
-			sql += col[i] + " " + "varchar(100)" + "  NULL,";
-		}
-		// Nếu là thuộc tính cuối cùng thì ")"
-		sql = sql.substring(0, sql.length() - 1) + ")";
+	// Kiểm tra File
+	public void checkFile(String file, String table_name, List<SinhVien> listBooks, String filed_name, int colnum,
+			String stt, String id) throws IOException, SQLException, ClassNotFoundException {
+		SendMailSSL sendmail = new SendMailSSL();
+		LoadFile loadfile = new LoadFile();
 		try {
-			PreparedStatement s = connection.prepareStatement(sql);
-			//Thực thi câu lệnh sql ngoại trừ cau select
+			// Bước 4.Kiểm tra đã LoadFile1() vào database database_staging
+			// Nếu file đã được load thì không load thêm vào nữa
 			
-			s.executeUpdate();
-			return true;
+			if (stt.equals("Upload_Ok")) {
+				System.out.println("File đã được insert và không thể insert thêm ");	
+			}
+			else
+				// Bước 5.Lấy ra các file có stt = "Download_Ok"
+				// Nếu status là "Download_Fail" thì loadfile không thành không
+				if (stt.equals("Download_Fail")) {
+				System.out.println("Insert không thành công");
+				String Tieude = "Insert không thành công";
+				String noiDung = "Insert không thành công";
+				// Bước 6.Gửi mail thông báo Insert không thành công
+				sendmail.sendMail(Tieude, noiDung);
+				// Bước 7.Cập nhập status = Upload_Fail và thời gian
+				String date_staging = loadfile.getTime();
+				String status = "Upload_Fail";
+				updateLog(status, date_staging, id);
+			}
+			else
+	
+			// Nếu status là "Download_OK" thì tiến hành loadfile
+			if (stt.equals("Download_OK")) {
+				// Bước 8.LoadFile1() vào database database_staging
+				loadfile.LoadFile1(table_name, listBooks, filed_name, colnum, stt, id);
+				System.out.println("Insert thành công");
+				String date_staging = loadfile.getTime();
+				String status = "Upload_Ok";
+				// Bước 9.Cập nhập status = Upload_OK và thời gian
+				// Cập nhập Log
+				updateLog(status, date_staging, id);
+
+			}
 		} catch (SQLException e) {
+
 			e.printStackTrace();
-
 		}
-		return false;
 
 	}
-
-//Lấy ngày tháng năm giờ hiện tại
-	public static String getTime() {
-		// Kiểu định dang này nếu ngày tháng năm giờ chỉ có 1 số thì sẽ tự động thêm số
-		// 0 đằng trước
-		DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		// Lấy thời gian hiện tại
-		Date date = new Date();
-		System.out.println(df.format(date));
-		return df.format(date);
-
-	}
-
-//Cập nhập log
-	public static boolean updateLog(String status, String date_staging, String id1) throws IOException, SQLException {
-		// Kết nối database
-		ConnectionDB connect = new ConnectionDB();
-		Connection connection = connect.loadProps();
-		String sql = "UPDATE databasecontroll.table_log Set status=?, date_update=? Where id=" + id1 + "";
-		try {
-			// Gắn các giá trị vào tham số
-			PreparedStatement ps = connection.prepareStatement(sql);
-			ps.setString(1, status);
-			ps.setString(2, date_staging);
-			// Cạp nhập log
-			ps.executeUpdate();
-			return true;
-		} catch (SQLException e) {
-			// Xử lý lỗi cho JDBC
-			e.printStackTrace();
-
-			return false;
-		}
-	}
-
 //Load File vào database
 	public void LoadFile1(String table_name, List<SinhVien> listSinhVien, String filed_name, int column, String stt,
 			String id1) throws ClassNotFoundException, SQLException, IOException {
@@ -97,16 +79,15 @@ public class LoadFile {
 		PreparedStatement ps = null;
 		LoadFile loadfile = new LoadFile();
 		// Kết nối database
-		ConnectionDB connect = new ConnectionDB();
+		ConnectionDBStaging connect = new ConnectionDBStaging();
 		Connection connection = connect.loadProps();
 		try {
 			if (column == 11) {
-				sql = "INSERT INTO database_staging." + table_name + "(" + filed_name + ")"
-						+ "   VALUES(?,?,?,?,?,?,?,?,?,?,?) ";
+				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?,?,?,?,?,?,?) ";
 				System.out.println(sql);
-				//Gắn các giá trị vào trong tham số
+				// Gắn các giá trị vào trong tham số
 				ps = connection.prepareStatement(sql);
-				//Duyệt danh sách sinh viên
+				// Duyệt danh sách sinh viên
 				for (SinhVien sinhvien : listSinhVien) {
 					ps.setString(1, sinhvien.getStt());
 					ps.setString(2, sinhvien.getMaSV());
@@ -124,8 +105,7 @@ public class LoadFile {
 				}
 			}
 			if (column == 7) {
-				sql = "INSERT INTO database_staging." + table_name + "(" + filed_name + ")"
-						+ "   VALUES(?,?,?,?,?,?,?) ";
+				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?,?,?) ";
 				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
@@ -141,7 +121,7 @@ public class LoadFile {
 				}
 			}
 			if (column == 5) {
-				sql = "INSERT INTO database_staging." + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?) ";
+				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?) ";
 				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
@@ -155,7 +135,7 @@ public class LoadFile {
 				}
 			}
 			if (column == 4) {
-				sql = "INSERT INTO database_staging." + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?) ";
+				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?) ";
 				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
@@ -169,10 +149,6 @@ public class LoadFile {
 			}
 			ps.executeBatch();
 			ps.close();
-			String date_staging = loadfile.getTime();
-			String status = "Upload_Ok";
-			//Cập nhập Log
-			updateLog(status, date_staging, id1);
 
 		} catch (Exception e) {
 			// Xử lý lỗi cho JDBC
@@ -182,56 +158,61 @@ public class LoadFile {
 
 	}
 
-//Kiểm tra File 
-	public void checkFile(String file, String table_name, List<SinhVien> listBooks, String filed_name, int colnum,
-			String stt, String id) throws IOException, SQLException, ClassNotFoundException {
-//SendMailSSL sendmail = new SendMailSSL();
-		LoadFile loadfile = new LoadFile();
-
-		try {
-			//Nếu status là "Download_OK" thì tiến hành loadfile
-			if (stt.equals("Download_OK")) {
-				loadfile.LoadFile1(table_name, listBooks, filed_name, colnum, stt, id);
-				System.out.println("Insert thành công");
-				//Nếu file đã được load thì không load thêm vào nữa
-			} else if (stt.equals("Upload_Ok")) {
-				System.out.println("File đã được insert và không thể insert thêm ");
-				//Nếu status là "Download_Fail" thì  loadfile không thành không
-			} else {
-				System.out.println("Insert không thành công");
-//				String Tieude = "Insert không thành công";
-//				String noiDung = "Insert không thành công";
-//				sendmail.sendMail(Tieude, noiDung);
-			}
-
-		} catch (SQLException e) {
-
-			e.printStackTrace();
-		}
+	// Lấy ngày tháng năm giờ hiện tại
+	public static String getTime() {
+		// Kiểu định dang này nếu ngày tháng năm giờ chỉ có 1 số thì sẽ tự động thêm số
+		// 0 đằng trước
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		// Lấy thời gian hiện tại
+		Date date = new Date();
+		System.out.println(df.format(date));
+		return df.format(date);
 
 	}
 
+	// Cập nhập log
+	public static boolean updateLog(String status, String date_staging, String id) throws IOException, SQLException {
+		// Kết nối database
+		ConnectionDB connect = new ConnectionDB();
+		Connection connection = connect.loadProps();
+		String sql = "UPDATE table_log Set status=?, date_update=? Where id=" + id + "";
+		try {
+			// Gắn các giá trị vào tham số
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ps.setString(1, status);
+			ps.setString(2, date_staging);
+			// Cạp nhập log
+			ps.executeUpdate();
+			return true;
+		} catch (SQLException e) {
+			// Xử lý lỗi cho JDBC
+			e.printStackTrace();
+
+			return false;
+		}
+	}
+
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
-		//Kết nối database
+		// Kết nối database
 		LoadFile loadfile = new LoadFile();
 		ConnectionDB connect = new ConnectionDB();
 //tạo 1 đối tượng input thuộc lớp scanner
 		Scanner sc = new Scanner(System.in);
-		//Lệnh in ra màn hình
+		// Lệnh in ra màn hình
 		System.out.println("Nhập loại config_id:");
-		//Tạo 1 biến thuộc đối tượng  in ra cả dòng
+		// Tạo 1 biến thuộc đối tượng in ra cả dòng
 		String id = sc.nextLine();
-		
+
 		PreparedStatement ps;
 		Connection connection = connect.loadProps();
-		//in ra danh sách trong bảng log và config
-		String sql = "SELECT *  from databasecontroll.table_config c, databasecontroll.table_log l  where l.config_id = c.id and l.config_id='"
-				+ id + "'";
-		//in ra các id theo từng loại config
-		String sql1 = "SELECT l.id  from databasecontroll.table_config c, databasecontroll.table_log l  where l.config_id = c.id and l.config_id='"
-				+ id + "'";
+		// in ra danh sách trong bảng log và config
+		String sql = "SELECT *  from table_config c, table_log l  where l.config_id = c.id and l.config_id='" + id
+				+ "'";
+		// in ra các id theo từng loại config
+		String sql1 = "SELECT l.id  from table_config c, table_log l  where l.config_id = c.id and l.config_id='" + id
+				+ "'";
 		PreparedStatement ps1 = connection.prepareStatement(sql1);
-		//Lấy các giá trị
+		// Lấy các giá trị
 		ResultSet rs1 = ps1.executeQuery();
 		while (rs1.next()) {
 
@@ -240,11 +221,11 @@ public class LoadFile {
 		}
 		System.out.println("Nhập id:");
 		String id1 = sc.nextLine();
-		//in ra file theo id
+		// in ra file theo id
 		sql += "and l.id=" + id1;
 		ps = connection.prepareStatement(sql);
 		ResultSet rs = ps.executeQuery();
-		//Lấy giá trị trong database
+		// Lấy giá trị trong database
 		while (rs.next()) {
 			String file1 = rs.getString("folder_local") + "\\" + rs.getString("name_file");
 			int col = rs.getInt("column");
@@ -253,9 +234,7 @@ public class LoadFile {
 			String stt = rs.getString("status");
 			String ten = rs.getString("name_file");
 			List<SinhVien> listSinhVien = new ReadFileExcel().readFileFromExcelFile(file1);
-			System.out.println(loadfile.createTable(table_name, filed_name, stt));
 			loadfile.checkFile(file1, table_name, listSinhVien, filed_name, col, stt, id1);
 		}
 	}
-
 }
