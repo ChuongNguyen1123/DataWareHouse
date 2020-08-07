@@ -17,7 +17,6 @@ public class CopyToWarehouse {
 	ConnectionDB connect = new ConnectionDB();
 	ConnectionDB1 connect1 = new ConnectionDB1();
 	ConnectionDB2 connect2 = new ConnectionDB2();
-	Properties pros = new Properties();
 
 	public void copy(int id) throws IOException, SQLException, ClassNotFoundException {
 		Connection connection = connect.loadProps();
@@ -138,6 +137,7 @@ public class CopyToWarehouse {
 	public String convertToYMD(String time) {
 		String first = "";
 		// Neu la kieu String co dau phan cach la /
+		// Vi du 20/12/2000, 2000/12/20
 		if (time.contains("/")) {
 			String[] list = time.split("/");
 			for (String s : list) {
@@ -163,7 +163,8 @@ public class CopyToWarehouse {
 				}
 			}
 
-			// Neu la kieu String co dau phan cach la /
+			// Neu la kieu String co dau phan cach la -
+			// Vi du 12-9-2000, 2000-9-12
 		}
 		if (time.contains("-")) {
 			String[] list = time.split("-");
