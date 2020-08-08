@@ -33,34 +33,34 @@ public class CopyToWarehouse {
 				.prepareStatement("SELECT table_name,table_warehouse FROM table_config where id = " + id);
 		ResultSet rs_getDataFromConfig = ps_getDataFromConfig.executeQuery();
 		while (rs_getDataFromConfig.next()) {
-			// Kiem tra ton tai table trong staging
-			boolean existInStaging = false;
+			// Kiem tra ton tai table trong staging va DW
+			boolean existInStaging = false;// bien kiem tra trong staging
+			boolean existInDW = false;// bien kiem tra trong DW
 			// Lay het cac table trong staging
 			PreparedStatement ps_checkTableInStaging = connection1.prepareStatement(
 					"SELECT TABLE_NAME FROM information_schema.TABLES WHERE table_schema = '" + DATABASE_2 + "'");
 			ResultSet rs_checkTableInStaging = ps_checkTableInStaging.executeQuery();
 			while (rs_checkTableInStaging.next()) {
-				//Kiem tra ten table trong staging lay trong config co ton tai trong database staging
+				// Kiem tra ten table trong staging lay trong config co ton tai trong database staging
 				if (rs_getDataFromConfig.getString(1).equals(rs_checkTableInStaging.getString(1))) {
 					existInStaging = true;
-					break;
-				}
-			}
-			// Kiem tra ton tai table trong DW
-			boolean existInDW = false;
-			// Lay het cac table trong staging
-			PreparedStatement ps_checkTableInDW = connection2.prepareStatement(
-					"SELECT TABLE_NAME FROM information_schema.TABLES WHERE table_schema = '" + DATABASE_3 + "'");
-			ResultSet rs_checkTableInDW = ps_checkTableInDW.executeQuery();
-			while (rs_checkTableInDW.next()) {
-				//Kiem tra ten table trong DW lay trong config co ton tai trong database DW
-				if (rs_getDataFromConfig.getString(2).equals(rs_checkTableInDW.getString(1))) {
-					existInDW = true;
+					// Lay het cac table trong staging
+					PreparedStatement ps_checkTableInDW = connection2
+							.prepareStatement("SELECT TABLE_NAME FROM information_schema.TABLES WHERE table_schema = '"
+									+ DATABASE_3 + "'");
+					ResultSet rs_checkTableInDW = ps_checkTableInDW.executeQuery();
+					while (rs_checkTableInDW.next()) {
+						// Kiem tra ten table trong DW lay trong config co ton tai trong database DW
+						if (rs_getDataFromConfig.getString(2).equals(rs_checkTableInDW.getString(1))) {
+							existInDW = true;
+							break;
+						}
+					}
 					break;
 				}
 			}
 			// Neu ca 2 table deu ton tai
-			if (existInDW == true && existInStaging == true) {
+			if (existInDW && existInStaging) {
 				// Lay het cac du lieu trong table staging lay tu config
 				PreparedStatement ps_getAllFromStaging = connection1
 						.prepareStatement("SELECT * FROM " + rs_getDataFromConfig.getString(1));
@@ -99,7 +99,7 @@ public class CopyToWarehouse {
 						// Copy
 						// Lay du lieu tu staging
 						while (rs_getAllFromStaging.next()) {
-							//Thuc hien insert vao DW
+							// Thuc hien insert vao DW
 							PreparedStatement ps_copyToDW = connection2.prepareStatement(sql);
 							for (int i = 1; i < count + 1; i++) {
 								// Neu cot co kieu du lieu la int
@@ -108,7 +108,7 @@ public class CopyToWarehouse {
 									if (rs_getAllFromStaging.getString(i) == null
 											|| rs_getAllFromStaging.getString(i).equals("")
 											|| rs_getAllFromStaging.getString(i).equals(" ")) {
-										//Cho mac dinh la 0
+										// Cho mac dinh la 0
 										ps_copyToDW.setInt(i, 0);
 									} else {
 										ps_copyToDW.setInt(i, convertToInt(rs_getAllFromStaging.getString(i)));
@@ -120,7 +120,7 @@ public class CopyToWarehouse {
 									if (rs_getAllFromStaging.getString(i) == null
 											|| rs_getAllFromStaging.getString(i).equals("")
 											|| rs_getAllFromStaging.getString(i).equals(" ")) {
-										//Cho mac dinh la Null
+										// Cho mac dinh la Null
 										ps_copyToDW.setString(i, "Null");
 									} else {
 										ps_copyToDW.setString(i, rs_getAllFromStaging.getString(i));
@@ -132,10 +132,10 @@ public class CopyToWarehouse {
 									if (rs_getAllFromStaging.getString(i) == null
 											|| rs_getAllFromStaging.getString(i).equals("")
 											|| rs_getAllFromStaging.getString(i).equals(" ")) {
-										//Cho mac dinh la ngay 1970-1-1
+										// Cho mac dinh la ngay 1970-1-1
 										ps_copyToDW.setDate(i, convertToDate("1970-1-1"));
 									} else {
-										//Chuyen ve kieu date trong sql dung dang Y-M-D
+										// Chuyen ve kieu date trong sql dung dang Y-M-D
 										ps_copyToDW.setDate(i,
 												convertToDate(convertToYMD(rs_getAllFromStaging.getString(i))));
 									}
@@ -164,7 +164,7 @@ public class CopyToWarehouse {
 				} else {
 					System.out.println("Khong copy vi khong cung so luong cot");
 				}
-			}else {
+			} else {
 				System.out.println("Table khong ton tai");
 			}
 		}
