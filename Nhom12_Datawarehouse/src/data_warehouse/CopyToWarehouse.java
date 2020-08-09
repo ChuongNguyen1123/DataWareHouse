@@ -28,9 +28,12 @@ public class CopyToWarehouse {
 		pros.load(f);
 		final String DATABASE_2 = pros.getProperty("database2");
 		final String DATABASE_3 = pros.getProperty("database3");
+		PreparedStatement ps_getFromLog = connection.prepareStatement("SELECT config_id from table_log where id=" +id);
+		ResultSet rs_getFromLog = ps_getFromLog.executeQuery();
+		while(rs_getFromLog.next()) {
 		// Lay du lieu tu config
 		PreparedStatement ps_getDataFromConfig = connection
-				.prepareStatement("SELECT table_name,table_warehouse FROM table_config where id = " + id);
+				.prepareStatement("SELECT table_name,table_warehouse FROM table_config where id = " + rs_getFromLog.getInt(1));
 		ResultSet rs_getDataFromConfig = ps_getDataFromConfig.executeQuery();
 		while (rs_getDataFromConfig.next()) {
 			// Kiem tra ton tai table trong staging va DW
@@ -149,13 +152,9 @@ public class CopyToWarehouse {
 											+ rs_getAllFromStaging.getInt(1) + "'");
 							ps_deleteInStaging.executeUpdate();
 						}
-						// Update copy thanh cong len isSuccess
-						PreparedStatement ps_setSuccess = connection
-								.prepareStatement("UPDATE table_config set is_Success ='Success' where id=" + id);
-						ps_setSuccess.executeUpdate();
-						// Update thoi gian copy
+						// Update thoi gian copy len log
 						PreparedStatement ps_setTimeUpdate = connection.prepareStatement(
-								"UPDATE table_config set timeCopy  ='" + getTime() + "' " + "where id=" + id);
+								"UPDATE table_log set date_warehouse  ='" + getTime() + "' " + "where id=" + id);
 						ps_setTimeUpdate.executeUpdate();
 						System.out.println("Success");
 					} else {
@@ -169,7 +168,7 @@ public class CopyToWarehouse {
 			}
 		}
 	}
-
+	}
 	public int convertToInt(String type) {
 		return Integer.parseInt(type);
 	}
