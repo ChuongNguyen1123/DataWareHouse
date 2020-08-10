@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -30,104 +31,113 @@ import java.util.Properties;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class Download {
 	private String sid = null;
 	private String urlHttp, usernameDriver, passwordDriver, srcFolderDriver, desSRCLocal, kieuFile;
-	private String connectionURL, userName, passWord, sqlConfig, status = "EOR";
+	private String connectionURL, userName, passWord, sqlConfig;
 	private String sqlLog;
 	private Connection connection;
-	private LinkedList<String> listFileSource;
-	private LinkedList<Integer> listSizeFileSource;
-	private LinkedList<Integer> listSizeFileCheck;
 
-//	Tao mang chua file check tu source voi local
 
-//	Load file config.properties
-	public Connection loadProps() throws IOException {
-		FileInputStream f = new FileInputStream("src/dms_config.properties");
+//	Load file config.properties de ket noi voi DB
+	public Connection loadProps() throws IOException { 
+		FileInputStream f = new FileInputStream("src/dms_config.properties"); // duong dan den file lay cau hinh ket noi DB
 		Properties pros = new Properties();
-		pros.load(f);
-		this.connectionURL = pros.getProperty("connectionURL");
-		this.userName = pros.getProperty("userName");
-		this.passWord = pros.getProperty("passWord");
-		this.sqlConfig = pros.getProperty("sqlconfig");
-		this.sqlLog = pros.getProperty("sqllog");
+		pros.load(f); 
+		this.connectionURL = pros.getProperty("connectionURL"); // duong dan ket noi den Navicat lay tu file dms_config
+		this.userName = pros.getProperty("userName");		 // username dang nhap DB
+		this.passWord = pros.getProperty("passWord");		// password dang nhap DB
+		this.sqlConfig = pros.getProperty("sqlconfig");		// cau query lay du lieu bang config
+		this.sqlLog = pros.getProperty("sqllog");		// cau query lay du lieu bang Log
 		try {
-			connection = DriverManager.getConnection(connectionURL, userName, passWord);
+//			Thiet lap ket noi voi DB qua duong dan url, username, password or tren 
+			connection = DriverManager.getConnection(connectionURL, userName, passWord);  
 			String lenhSQL = sqlConfig;
-			PreparedStatement pre = connection.prepareStatement(lenhSQL);
-			ResultSet resultSet = pre.executeQuery();
-			while (resultSet.next()) {
-				urlHttp = resultSet.getString("url");
-				usernameDriver = resultSet.getString("username");
-				passwordDriver = resultSet.getString("password");
-				srcFolderDriver = resultSet.getString("source_folder");
-				desSRCLocal = resultSet.getString("folder_local");
-				kieuFile = resultSet.getString("file");
+			PreparedStatement pre = connection.prepareStatement(lenhSQL);  // truy van den cac tham so cua cau query lenhSQL
+			ResultSet resultSet = pre.executeQuery();  // Lay ra cac dong cua table config
+			while (resultSet.next()) { 		// duyet tung dong cua table config
+				urlHttp = resultSet.getString("url");   	// Lay du lieu cua cot url tu table config
+				usernameDriver = resultSet.getString("username");		// Lay  username tu table config de login den server
+				passwordDriver = resultSet.getString("password");		// Lay  password tu table config de login den server
+				srcFolderDriver = resultSet.getString("source_folder");		// Lay  duong dan den thu muc can download du lieu
+				desSRCLocal = resultSet.getString("folder_local");		// Lay  duong dan den thu muc duoi local
+				kieuFile = resultSet.getString("file");			// loai file download
 			}
 
 		} catch (SQLException e) {
-			System.out.println("Loi ket noi, kiem tra lai");
+			SendMailSSL senmail = new SendMailSSL(); 		// goi lop senmail
+//			senmai (chu de mail, noi dung gui)
+			senmail.sendMail("Data Warehouse nhom 12 - Ca sang ", " Khong the ket noi vao DB");
+			System.out.println("Loi ket noi, kiem tra lai");  // in ra man hinh
 			System.exit(0);
 			e.printStackTrace();
 		}
 		return connection;
 	}
 
-	private void login() {
+//	Dang nhap den server Goi API SYNO.API.Auth API version 3
+	public void login() {
 		try {
+//			Duong dan de dung API login vao server 
+//			sao khi login thanh cong se tra ra chuoi token
 			URL urlForGetRequest = new URL(
 					urlHttp + "/webapi/auth.cgi?api=SYNO.API.Auth&version=3&method=login&account=" + usernameDriver
 							+ "&passwd=" + passwordDriver + "&session=FileStation&format=cookie");
-			HttpURLConnection conection = (HttpURLConnection) urlForGetRequest.openConnection();
-			conection.setRequestMethod("GET");
-			int responseCode = conection.getResponseCode();
+//				ket noi toi mot URL ma protocol cua no la HTTP
+			HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
+			conectHttpURL.setRequestMethod("GET");
+			int responseCode = conectHttpURL.getResponseCode();
 			if (responseCode == HttpURLConnection.HTTP_OK) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(conection.getInputStream()));
+				BufferedReader in = new BufferedReader(new InputStreamReader(conectHttpURL.getInputStream()));
 				StringBuffer response = new StringBuffer();
 				String line = null;
 				while ((line = in.readLine()) != null) {
 					response.append(line);
 				}
 				in.close();
+
 				JSONParser parser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) parser.parse(response.toString());
 				this.sid = (String) ((JSONObject) jsonObject.get("data")).get("sid");
-				// print result
+				// print chuoi token khi login thanh cong
 				System.out.println("sid: " + sid);
 				// GetAndPost.POSTRequest(response.toString());
 			} else {
 				System.out.println("GET NOT WORKED");
 			}
 		} catch (Exception e) {
-			System.out.println("Not internet!");
+//			gui mail khi login kh thanh cong
+			SendMailSSL senmail = new SendMailSSL();
+			senmail.sendMail("Data Warehouse nhom 12 - Ca sang ", " Khong the login vao he thong tai du lieu!");
+			System.out.println("Not Login!");
 		}
 
 	}
 
+	
+//	Phuong thuc lay ngay thang nam hien tai
 	public static String getTime() {
-		DateFormat df = new SimpleDateFormat("yyyy/MM/dd -- HH:mm:ss");
-		Date date = new Date();
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd -- HH:mm:ss");   //Khoi tao doi tuong format ngay thang nam cua java
+		Date date = new Date();       //Doi tuong ngay
 //		System.out.println(df.format(date));
 		return df.format(date);
 
 	}
 
-	public LinkedList<String> listFiles() throws Exception {
-		if (sid != null) {
-//			listFileSource.clear();
-//			listSizeFileSource.clear();
-			listFileSource = new LinkedList<String>();
-			listSizeFileSource = new LinkedList<Integer>();
+//	Lay list file o thu muc tren server truyen vao ten loai file va kieu file
+	public LinkedList<String> listFiles(String nameFile, String typeFile) throws Exception {
+		LinkedList<String> listFileSource = new LinkedList<String>();
+		//	Lay list file o thu muc tren server dung API SYNO.FileStation.List version 1
 			URL urlForGetRequest = new URL(
 					urlHttp + "/webapi/entry.cgi?api=SYNO.FileStation.List&version=1&method=list&folder_path="
-							+ srcFolderDriver + "&additional=size&_sid=" + sid);
-			HttpURLConnection conection = (HttpURLConnection) urlForGetRequest.openConnection();
-			conection.setRequestMethod("GET");
-			int responseCode = conection.getResponseCode();
+							+ srcFolderDriver + "&_sid=" + sid);
+			HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
+			conectHttpURL.setRequestMethod("GET");
+			int responseCode = conectHttpURL.getResponseCode();
 			if (responseCode == HttpURLConnection.HTTP_OK) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(conection.getInputStream()));
+				BufferedReader in = new BufferedReader(new InputStreamReader(conectHttpURL.getInputStream()));
 				StringBuffer response = new StringBuffer();
 				String line = null;
 				while ((line = in.readLine()) != null) {
@@ -136,162 +146,184 @@ public class Download {
 				in.close();
 				JSONParser parser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) parser.parse(response.toString());
+//			Lay tat ca cac file tim thay dan vao doi tuong mang jsonArray
 				JSONArray files = (JSONArray) ((JSONObject) jsonObject.get("data")).get("files");
 				for (int i = 0; i < files.size(); i++) {
-					listFileSource.push((String) ((JSONObject) files.get(i)).get("path"));
-					String sizeFile = (String) ((JSONObject) files.get(i)).get("additional").toString();
-					String[] chuoi = sizeFile.split(":");
-					String[] intSize = chuoi[1].split("}");
-					listSizeFileSource.push(Integer.parseInt(intSize[0]));
-				}
-//				for (int i = 0; i < listFileSource.size(); i++) {
-//					
-//					System.out.println(listFileSource.get(i) + "\t" + listSizeFileSource.get(i));
-//				}
-//				return listFileSource;
-			} else {
-				System.out.println("GET LIST FILES NOT WORKED");
+//					lay ra duong dan den file tren server
+					String pathFile = (String) ((JSONObject) files.get(i)).get("path");
+//					cat duong dan de lay ten file
+					String nameFilesrc = pathFile.substring(pathFile.lastIndexOf("/") + 1);
+//					Dem ten file so sanh dung loai file va kieu file de download ve local
+					if (nameFilesrc.contains(nameFile) && nameFilesrc.contains(typeFile)) {
+//						tat ca ca file dung yeu cau se duoc them ca duong dan den file do vao mang listFileSouce 
+						listFileSource.push((String) ((JSONObject) files.get(i)).get("path"));
+					}
 			}
+
 		}
+//	tra ve mang cac file dung dinh dang tren server
 		return listFileSource;
 	}
 
-	public void down() throws Exception {
-		if (sid != null) {
-			int sumFile = 1;
-			LinkedList<String> lisFile = new LinkedList<>();
-			File file = new File(desSRCLocal);
-			status = "Download_OK";
-			if (file.listFiles().length == 0) {
-				lisFile = listFiles();
-			} else if (file.listFiles().length > 0) {
-//				status = "Upload";
-				lisFile = checkFile();
-				listSizeFileSource = listSizeFileCheck;
+	
+	
+//	Check sum MD5 de kiem tra file tren server
+//	phuong thuc nhan cao duong dan den file tren server
+	public String checkSumMD5FileSrc(String srcFile) throws IOException, ParseException {
+		String taskid = ""; 	//	chuoi ket qua sau khi checksum
+//		doi API md5 la SYNO.FileStation.MD5 version 1 de check sum file 
+		URL urlForGetRequest = new URL(
+				urlHttp + "/webapi/entry.cgi?api=SYNO.FileStation.MD5&version=1&method=start&file_path=" + srcFile
+						+ "&_sid=" + sid);
+		HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
+		conectHttpURL.setRequestMethod("GET");
+		int responseCode = conectHttpURL.getResponseCode();
+		if (responseCode == HttpURLConnection.HTTP_OK) {
+			BufferedReader in = new BufferedReader(new InputStreamReader(conectHttpURL.getInputStream()));
+			StringBuffer response = new StringBuffer();
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				response.append(line);
 			}
+			in.close();
+			JSONParser parser = new JSONParser();
+			JSONObject jsonObject = (JSONObject) parser.parse(response.toString());
+//			lay ra ket qua checksum duoc gan vao chuoi checksum khai bao ow tren
+			taskid = (String) ((JSONObject) jsonObject.get("data")).get("taskid");
+		}
+		return taskid; 
+	}
 
-			for (int i = 0; i < lisFile.size(); i++) {
-				String srcNameFile = lisFile.get(i);
-				String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
-				if (nameFile.contains(kieuFile)) {
-					URL urlForGetRequest = new URL(urlHttp
-							+ "/webapi/entry.cgi?api=SYNO.FileStation.Download&version=1&method=download&mode=open&path="
-							+ srcNameFile + "&_sid=" + sid);
-					HttpURLConnection conection = (HttpURLConnection) urlForGetRequest.openConnection();
-					conection.setRequestMethod("GET");
-					int responseCode = conection.getResponseCode();
-					if (responseCode == HttpURLConnection.HTTP_OK) {
-						InputStream in = new BufferedInputStream((conection.getInputStream()));
+//	Phuong thuc down file tren server
+	public void down() throws Exception {
+//		goi ham doc file de ket noi voi DB
+		loadProps();
+		if (connection != null) {
+//		ket noi thanh cong thi lay du lieu tu table config de dang nhap vao server
+			login();
+			if (sid != null) {
+//				login thanh cong
+//				tien hanh lay tat ca cac dong cua file config
+				String sql_selectConfig = "SELECT * FROM table_config";
+				PreparedStatement pre_selectConfig = connection.prepareStatement(sql_selectConfig);
+				ResultSet rs_selectConfig = pre_selectConfig.executeQuery();
+//				duyet down tung dong config
+				while (rs_selectConfig.next()) {
+//					lay ra du lieu cot id, table_name, file cua table config
+					Integer idConfig = rs_selectConfig.getInt("id");
+					String nameFileConfig = rs_selectConfig.getString("table_name");
+					String typeFileConfig = rs_selectConfig.getString("file");
+//		voi moi dong config tuong ung voi mot loai file
+//		Tim tren server nhung file thuoc loai file do dem gan vao mang moi goi la listFileSrc
+					LinkedList<String> listFileSrc = listFiles(nameFileConfig, typeFileConfig);
+//					duyet mang file de down load tung file con ve
+					for (int i = 0; i < listFileSrc.size(); i++) {
+//						Truoc khi down can phai check file do da duoc down hay chua 
+						String srcFileCheck = checkFile(listFileSrc.get(0), idConfig);  //	goi ham checkfile de kiem tra 
+						if (srcFileCheck != null) {  //	file tren server la file moi hoac file co su thay doi
+							String nameFile = srcFileCheck.substring(srcFileCheck.lastIndexOf("/") + 1);  // lay ra ten file tren server 
+//			goi API download file ve local la SYNO.FileStation.Download version 1
+							URL urlForGetRequest = new URL(urlHttp
+									+ "/webapi/entry.cgi?api=SYNO.FileStation.Download&version=1&method=download&mode=open&path="
+									+ srcFileCheck + "&_sid=" + sid);
+							HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
+							conectHttpURL.setRequestMethod("GET");
+							int responseCode = conectHttpURL.getResponseCode();
+							if (responseCode == HttpURLConnection.HTTP_OK) {
+								InputStream in = new BufferedInputStream((conectHttpURL.getInputStream()));
 
-						BufferedOutputStream out = new BufferedOutputStream(
-								new FileOutputStream(desSRCLocal + "\\" + nameFile));
-						int readData;
-						byte[] buff = new byte[1024];
-						while ((readData = in.read(buff)) > -1) {
-							out.write(buff, 0, readData);
+								BufferedOutputStream out = new BufferedOutputStream(
+										new FileOutputStream(desSRCLocal + "\\" + nameFile));
+								int readData;
+								byte[] buff = new byte[1024];
+//  qua trinh doc file tu server ghi xuong lacal
+								while ((readData = in.read(buff)) > -1) {
+									out.write(buff, 0, readData);
+								}
+//								Sau khi doc ghi xong tien hanh dong file
+								in.close();
+								out.close();
+							}
+
 						}
-						int config_id = 1;
-//						LocalDate date = java.time.LocalDate.now();
-						String insertLog = sqlLog;
-						PreparedStatement pre = connection.prepareStatement(insertLog);
-						pre.setString(1, urlHttp + srcFolderDriver);
-						pre.setString(2, nameFile);
-						pre.setString(3, status);
-						pre.setInt(4, listSizeFileSource.get(i));
-//						pre.setString(5, date.toString());
-						pre.setString(5, getTime());
-						if (nameFile.contains("sinhvien")) {
-							config_id = 1;
-						} else if (nameFile.contains("monhoc")) {
-							config_id = 2;
-						} else if (nameFile.contains("dangky")) {
-							config_id = 4;
-						} else if (nameFile.contains("lophoc")) {
-							config_id = 5;
-						}
-						pre.setInt(6, config_id);
-						pre.execute();
-						System.out.println("Download file name: " + nameFile + "\t" + "size: "
-								+ listSizeFileSource.get(i) + "KB" + "\t" + status + "\t" + java.time.LocalDate.now());
-						in.close();
-						out.close();
-						sumFile++;
-
 					}
 				}
 			}
+//			Duyet cac file down ve thanh cong duoi thu muc lacal
+			File file = new File(desSRCLocal);
+			File[] listFileLocal = file.listFiles();
+			String status = "Download_OK";  //	gan status cho file co duoi local
+			for (File file2 : listFileLocal) {
+//				cau query updat vao bang log
+				String sqlUdateLog = "UPDATE table_log SET date_download = ?, status = ? WHERE name_file = '"+ file2.getName() + "'";
+				PreparedStatement prepaUpdateLog = connection.prepareStatement(sqlUdateLog);
+				prepaUpdateLog.setString(1, getTime());
+				prepaUpdateLog.setString(2, status);
+				prepaUpdateLog.executeUpdate();
 
-//					SendMailSSL senmail = new SendMailSSL();
-//					senmail.sendMail("Data warehouse nhÃ³m 12 ca sÃ¡ng", "Ä�Ã£ download tá»•ng " + sumFile + " file tá»« source vá»� thÆ° má»¥c " + desSRCLocal + "local");
-			System.out.println(status + sumFile + " file");
-
-		} else {
-			System.out.println("Not login!");
+//				String insertFileLog = "INSERT INTO table_log(source_folder, name_file, status, md5, config_id) VALUES (?, ?, ?, ?, ?)";
+//				PreparedStatement preIsFileLog = connection.prepareStatement(insertFileLog);
+//				preIsFileLog.setString(1, urlHttp + srcFolderDriver);
+//				preIsFileLog.setString(2, file2.getName());
+//				preIsFileLog.setString(3, "EOR");
+//				preIsFileLog.setString(4, "");
+//				if (file2.getName().contains("monhoc")) {
+//					preIsFileLog.setInt(5, 2);
+//				} else if (file2.getName().contains("dangky")) {
+//					preIsFileLog.setInt(5, 3);
+//				} else if (file2.getName().contains("lophoc")) {
+//					preIsFileLog.setInt(5, 4);
+//				} else {
+//					preIsFileLog.setInt(5, 1);
+//				}
+//				preIsFileLog.execute();
+				
+			}
+			connection.close();  //	dong ket noi DB
 		}
 	}
 
-	public LinkedList<String> checkFile() throws Exception {
-		boolean flag = false;
-		LinkedList<String> lis = listFiles();
-		LinkedList<String> lisFileDinhDang = new LinkedList<>();
-		LinkedList<Integer> lsfc = new LinkedList<>();
-		LinkedList<String> listFileCheck = new LinkedList<>();
-		listSizeFileCheck = new LinkedList<>();
-		File file = new File(desSRCLocal);
-		File[] lf = file.listFiles();
-		String name = "";
-		String nameDrive = "";
-		int leng = 0;
-		int dd = 0;
-		int si = 0;
-//		int index = 0;
-		for (int i = 0; i < lis.size(); i++) {
-			String srcNameFile = lis.get(i);
-			String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
-			if (nameFile.contains(kieuFile)) {
-				lisFileDinhDang.add(srcNameFile);
-				listSizeFileCheck.add(listSizeFileSource.get(i));
-//				index++;
+	
+//	Kiem tra file tren server voi duoi local
+	public String checkFile(String pathNameFileSrc, int idConfig) throws Exception {
+		String srcFileCheck = "";
+		String status = "EOR";  //	set status nhung file tren local chua duoc down
+		String checkMD5 = checkSumMD5FileSrc(pathNameFileSrc); //	goi ham checksum file server o tren
+		String nameFileLog = pathNameFileSrc.substring(pathNameFileSrc.lastIndexOf("/") + 1);  // cat namfileSRC thanh namfile
+//		cau query la du lie cua cot log the cot name_file
+		String select_log = "SELECT * FROM table_log WHERE name_file = '" + nameFileLog + "'";
+		PreparedStatement preSelect_log = connection.prepareStatement(select_log);
+		ResultSet rsSelect_log = preSelect_log.executeQuery();
+//		Duyet du lieu tu dong cua table log
+		if (!rsSelect_log.next()) {  //	Truong hop down ve lan dau thi table log chua co gi hoac file co su thay doi tren server
+			srcFileCheck = pathNameFileSrc;
+//			Cau query them row vao bang Table_Log
+			String insertFileLog = "INSERT INTO table_log(source_folder, name_file, status, md5, config_id) VALUES (?, ?, ?, ?, ?)";
+			PreparedStatement preIsFileLog = connection.prepareStatement(insertFileLog);
+			preIsFileLog.setString(1, urlHttp + srcFolderDriver);
+			preIsFileLog.setString(2, nameFileLog);
+			preIsFileLog.setString(3, status);
+			preIsFileLog.setString(4, checkMD5);
+			preIsFileLog.setInt(5, idConfig);
+			preIsFileLog.execute();
+		} else { 	//	neu cung ten ma giong nhau cai MD5
+			if (rsSelect_log.getString("md5").equals(checkMD5)) {
+				srcFileCheck = null; // bo qua file tren server do
+			} else {  //	neu cung ten ma khac nhau cai MD5
+				srcFileCheck = pathNameFileSrc;  
+//				Cau query de cap nhat vao cot table log
+				String updateLog = "UPDATE table_log SET md5 = '" + checkMD5 + "', status = '" + status
+						+ "' WHERE name_file = '" + nameFileLog + "'";
+				PreparedStatement preUpdateLog = connection.prepareStatement(updateLog);
+				preUpdateLog.executeUpdate();
 			}
 		}
-		listFileCheck = lisFileDinhDang;
-//		listSizeFileCheck = lsfc;
-		dd = lisFileDinhDang.size();
-		si = lsfc.size();
-		for (int j = 0; j < dd; j++) {
-			String srcNameFile = lisFileDinhDang.get(j);
-			String nameFile = srcNameFile.substring(srcNameFile.lastIndexOf("/") + 1);
-			for (int l = 0; l < lf.length; l++) {
-				name = lf[l].getName();
-				nameDrive = lisFileDinhDang.get(j);
-				leng = (int) lf[l].length();
-				if (nameFile.equalsIgnoreCase(lf[l].getName())) {
-//					if (listSizeFileCheck.get(j) != lf[l].length()) {
-//						status = "UPLOAD";
-//					}
-					if (listSizeFileCheck.get(j) == lf[l].length()) {
-						lisFileDinhDang.remove(j);
-						listSizeFileCheck.remove(j);
-						j--;
-						dd--;
-						break;
-					}
-				}
-			}
-//		listSizeFileCheck = lsfc;
-//		for (int i = 0; i < listFileCheck.size(); i++) {
-//			System.out.println(lisFileDinhDang.get(i)+ "\t" + lsfc.get(i));			
-		}
-		return lisFileDinhDang;
+		return srcFileCheck;  //	xuat ra duong dan den file do tren server
 	}
 
 	public static void main(String[] args) throws Exception {
 		Download test = new Download();
-		test.loadProps();
-		test.login();
-//		test.listFiles();
 		test.down();
-//		test.checkFile();
 	}
 
 }

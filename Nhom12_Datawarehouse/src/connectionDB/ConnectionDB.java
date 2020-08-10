@@ -29,10 +29,20 @@ public class ConnectionDB {
 		this.userName = pros.getProperty("userName");
 		this.passWord = pros.getProperty("passWord");
 		connect = DriverManager.getConnection(connectionURL, userName, passWord);
-		System.out.println(connect);
+//		System.out.println(connect);
 		return connect;
 	}
 	
+//	public void test(String name, String md5) throws SQLException, IOException {
+//		loadProps();
+//		String s = "UPDATE table_log SET get_md5 = ? WHERE name_file = ?";
+//		System.out.println(s.toString());
+//		PreparedStatement p = connect.prepareStatement(s);
+//		p.setString(1, md5);
+//		p.setString(2, name);
+//		p.executeUpdate();
+//		connect.close();
+//	}
 	
 
 	public String getConnectionURL() {
@@ -48,8 +58,8 @@ public class ConnectionDB {
 	}
 
 	
-	public static void main(String[] args) throws IOException, SQLException {
-		System.out.println(new ConnectionDB());
-	}
+//	public static void main(String[] args) throws IOException, SQLException {
+//		new ConnectionDB();
+//	}
 
 }

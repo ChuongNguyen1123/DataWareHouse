@@ -247,13 +247,13 @@ public class CopyToWarehouse {
 		return timestamp;
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
-		CopyToWarehouse cptdw = new CopyToWarehouse();
-		while (true) {
-			System.out.println("Nhap id:");
-			Scanner sc = new Scanner(System.in);
-			int id = sc.nextInt();
-			cptdw.copy(id);
-		}
-	}
+//	public static void main(String[] args) throws ClassNotFoundException, IOException, SQLException {
+//		CopyToWarehouse cptdw = new CopyToWarehouse();
+//		while (true) {
+//			System.out.println("Nhap id:");
+//			Scanner sc = new Scanner(System.in);
+//			int id = sc.nextInt();
+//			cptdw.copy(id);
+//		}
+//	}
 }

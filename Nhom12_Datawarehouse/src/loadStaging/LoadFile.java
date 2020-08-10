@@ -23,32 +23,34 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.xmlbeans.impl.xb.xmlconfig.ConfigDocument.Config;
 
 import connectionDB.ConnectionDB;
+import data_warehouse.CopyToWarehouse;
 import download.SendMailSSL;
 
 public class LoadFile {
 	// Kiểm tra File
 	public void checkFile(String file, String table_name, List<SinhVien> listBooks, String filed_name, int colnum,
-			String stt, String id) throws IOException, SQLException, ClassNotFoundException {
+			String stt, String id, String nameFile) throws IOException, SQLException, ClassNotFoundException {
 		SendMailSSL sendmail = new SendMailSSL();
-		LoadFile loadfile = new LoadFile();
+//		LoadFile loadfile = new LoadFile();
 		try {
 			// Bước 4.Kiểm tra đã LoadFile1() vào database database_staging
 			// Nếu file đã được load thì không load thêm vào nữa
 			
 			if (stt.equals("Upload_Ok")) {
-				System.out.println("File đã được insert và không thể insert thêm ");	
+				System.out.println("File " + nameFile + " đã được insert");	
 			}
 			else
+			System.out.println("Bat dau Insert flie " + nameFile);
 				// Bước 5.Lấy ra các file có stt = "Download_Ok"
 				// Nếu status là "Download_Fail" thì loadfile không thành không
 				if (stt.equals("Download_Fail")) {
-				System.out.println("Insert không thành công");
-				String Tieude = "Insert không thành công";
-				String noiDung = "Insert không thành công";
+				System.out.println("Insert file " + nameFile + " không thành công");
+				String Tieude = "Data Warehouse nhom 12 - Ca sang";
+				String noiDung = "Insert file " + nameFile + " không thành công";
 				// Bước 6.Gửi mail thông báo Insert không thành công
 				sendmail.sendMail(Tieude, noiDung);
 				// Bước 7.Cập nhập status = Upload_Fail và thời gian
-				String date_staging = loadfile.getTime();
+				String date_staging = getTime();
 				String status = "Upload_Fail";
 				updateLog(status, date_staging, id);
 			}
@@ -57,9 +59,9 @@ public class LoadFile {
 			// Nếu status là "Download_OK" thì tiến hành loadfile
 			if (stt.equals("Download_OK")) {
 				// Bước 8.LoadFile1() vào database database_staging
-				loadfile.LoadFile1(table_name, listBooks, filed_name, colnum, stt, id);
-				System.out.println("Insert thành công");
-				String date_staging = loadfile.getTime();
+				LoadFile1(table_name, listBooks, filed_name, colnum, stt, id);
+				System.out.println("Insert file " + nameFile + " thành công");
+				String date_staging = getTime();
 				String status = "Upload_Ok";
 				// Bước 9.Cập nhập status = Upload_OK và thời gian
 				// Cập nhập Log
@@ -84,7 +86,7 @@ public class LoadFile {
 		try {
 			if (column == 11) {
 				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?,?,?,?,?,?,?) ";
-				System.out.println(sql);
+//				System.out.println(sql);
 				// Gắn các giá trị vào trong tham số
 				ps = connection.prepareStatement(sql);
 				// Duyệt danh sách sinh viên
@@ -106,7 +108,7 @@ public class LoadFile {
 			}
 			if (column == 7) {
 				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?,?,?) ";
-				System.out.println(sql);
+//				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
 					ps.setString(1, sinhvien.getStt());
@@ -122,7 +124,7 @@ public class LoadFile {
 			}
 			if (column == 5) {
 				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?,?) ";
-				System.out.println(sql);
+//				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
 					ps.setString(1, sinhvien.getStt());
@@ -136,7 +138,7 @@ public class LoadFile {
 			}
 			if (column == 4) {
 				sql = "INSERT INTO " + table_name + "(" + filed_name + ")" + "   VALUES(?,?,?,?) ";
-				System.out.println(sql);
+//				System.out.println(sql);
 				ps = connection.prepareStatement(sql);
 				for (SinhVien sinhvien : listSinhVien) {
 					ps.setString(1, sinhvien.getStt());
@@ -192,49 +194,31 @@ public class LoadFile {
 		}
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
+	public void run() throws ClassNotFoundException, SQLException, IOException {
 		// Kết nối database
 		LoadFile loadfile = new LoadFile();
 		ConnectionDB connect = new ConnectionDB();
-//tạo 1 đối tượng input thuộc lớp scanner
-		Scanner sc = new Scanner(System.in);
-		// Lệnh in ra màn hình
-		System.out.println("Nhập loại config_id:");
-		// Tạo 1 biến thuộc đối tượng in ra cả dòng
-		String id = sc.nextLine();
-
-		PreparedStatement ps;
 		Connection connection = connect.loadProps();
+		
+		CopyToWarehouse copy = new CopyToWarehouse();
+		
 		// in ra danh sách trong bảng log và config
-		String sql = "SELECT *  from table_config c, table_log l  where l.config_id = c.id and l.config_id='" + id
-				+ "'";
-		// in ra các id theo từng loại config
-		String sql1 = "SELECT l.id  from table_config c, table_log l  where l.config_id = c.id and l.config_id='" + id
-				+ "'";
-		PreparedStatement ps1 = connection.prepareStatement(sql1);
-		// Lấy các giá trị
-		ResultSet rs1 = ps1.executeQuery();
-		while (rs1.next()) {
-
-			String idfile = rs1.getString("id");
-			System.out.println("Có các loại file sau :" + idfile);
-		}
-		System.out.println("Nhập id:");
-		String id1 = sc.nextLine();
-		// in ra file theo id
-		sql += "and l.id=" + id1;
-		ps = connection.prepareStatement(sql);
-		ResultSet rs = ps.executeQuery();
-		// Lấy giá trị trong database
+		
+		String sqlSelectLog = "SELECT *  from table_config c, table_log l  where l.config_id = c.id";
+		PreparedStatement prepaSelectLog = connection.prepareStatement(sqlSelectLog);
+		ResultSet rs = prepaSelectLog.executeQuery();
 		while (rs.next()) {
-			String file1 = rs.getString("folder_local") + "\\" + rs.getString("name_file");
+			int idLog = rs.getInt("l.id");
+			String nameFileLog = rs.getString("name_file");
+			String file1 = rs.getString("folder_local") + "\\" + nameFileLog;
 			int col = rs.getInt("column");
 			String table_name = rs.getString("table_name");
 			String filed_name = rs.getString("filed_name");
 			String stt = rs.getString("status");
 			String ten = rs.getString("name_file");
 			List<SinhVien> listSinhVien = new ReadFileExcel().readFileFromExcelFile(file1);
-			loadfile.checkFile(file1, table_name, listSinhVien, filed_name, col, stt, id1);
+			loadfile.checkFile(file1, table_name, listSinhVien, filed_name, col, stt, String.valueOf(idLog), nameFileLog);
+			copy.copy(idLog);
 		}
 	}
 }
