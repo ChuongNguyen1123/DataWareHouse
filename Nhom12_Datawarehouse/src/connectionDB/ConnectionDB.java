@@ -10,6 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import download.SendMailSSL;
+
 public class ConnectionDB {
 	private String connectionURL, userName, passWord;
 	private Connection connect;
@@ -21,28 +23,25 @@ public class ConnectionDB {
 //	todo......
 	
 //	phuong thuc load file dms_config.properties trong thu muc src
-	public Connection loadProps() throws IOException, SQLException {
+	public Connection loadProps() throws IOException {
 		FileInputStream f = new FileInputStream("src/dms_config.properties");
 		Properties pros = new Properties();
 		pros.load(f);
 		this.connectionURL = pros.getProperty("connectionURL");
 		this.userName = pros.getProperty("userName");
 		this.passWord = pros.getProperty("passWord");
-		connect = DriverManager.getConnection(connectionURL, userName, passWord);
+		try {
+			connect = DriverManager.getConnection(connectionURL, userName, passWord);
+		} catch (SQLException e) {
+			SendMailSSL senmail = new SendMailSSL(); 		// goi lop senmail
+//			senmai (chu de mail, noi dung gui)
+			senmail.sendMail("Data Warehouse nhom 12 - Ca sang ", " Khong the ket noi vao DB");
+			System.out.println("Loi ket noi, kiem tra lai");  // in ra man hinh
+			e.printStackTrace();
+		}
 //		System.out.println(connect);
 		return connect;
 	}
-	
-//	public void test(String name, String md5) throws SQLException, IOException {
-//		loadProps();
-//		String s = "UPDATE table_log SET get_md5 = ? WHERE name_file = ?";
-//		System.out.println(s.toString());
-//		PreparedStatement p = connect.prepareStatement(s);
-//		p.setString(1, md5);
-//		p.setString(2, name);
-//		p.executeUpdate();
-//		connect.close();
-//	}
 	
 
 	public String getConnectionURL() {
@@ -59,7 +58,7 @@ public class ConnectionDB {
 
 	
 //	public static void main(String[] args) throws IOException, SQLException {
-//		new ConnectionDB();
+//		new ConnectionDB().test(1);
 //	}
 
 }

@@ -10,20 +10,18 @@ public class Run {
 	public static void main(String[] args) throws Exception {
 		Download download = new Download();
 		LoadFile loadStaging = new LoadFile();
-//		Scanner sc = new Scanner(System.in);
-//		System.out.println("Nhap id_config: ");
-//		String strID_Config = sc.nextLine();
-		
+
 		if (args != null) {
-			if (args.length > 0 && args[0] == "download") {
-				System.out.println("download");
-				// download heest trong config
-				download.down();
+			if (args.length > 0 && args[0].equals("download")) {
+				if (args.length == 1)
+//					Chay cac dong config
+					download.down();
 				if (args.length == 2) {
-					// download theo id
+//					Chay tung dong
+					download.down(Integer.parseInt(args[1]));
 				}
 			}
-			if (args.length > 0 && args[0] == "load") {
+			if (args.length > 0 && args[0].equals("load")) {
 				loadStaging.run();
 			}
 		}
