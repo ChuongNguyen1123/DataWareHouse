@@ -87,9 +87,9 @@ public class Download {
 							+ "&passwd=" + passwordDriver + "&session=FileStation&format=cookie");
 //				ket noi toi mot URL ma protocol cua no la HTTP
 			HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
-			conectHttpURL.setRequestMethod("GET");
-			int responseCode = conectHttpURL.getResponseCode();
-			if (responseCode == HttpURLConnection.HTTP_OK) {
+			conectHttpURL.setRequestMethod("GET");  //	phuong thuc gui yeu cau la get
+			int responseCode = conectHttpURL.getResponseCode();   //	Lay duoc cai trang thai cua requet
+			if (responseCode == HttpURLConnection.HTTP_OK) {   //	ket noi thanh cong
 				BufferedReader in = new BufferedReader(new InputStreamReader(conectHttpURL.getInputStream()));
 				StringBuffer response = new StringBuffer();
 				String line = null;
@@ -97,10 +97,10 @@ public class Download {
 					response.append(line);
 				}
 				in.close();
-
+//  khai bao thu vien Json dung de lay du lieu tra ve
 				JSONParser parser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) parser.parse(response.toString());
-				this.sid = (String) ((JSONObject) jsonObject.get("data")).get("sid");
+				this.sid = (String) ((JSONObject) jsonObject.get("data")).get("sid");  //	lay token gan cho bien sid
 				// print chuoi token khi login thanh cong
 				System.out.println("sid: " + sid);
 				// GetAndPost.POSTRequest(response.toString());
@@ -129,7 +129,7 @@ public class Download {
 //	Lay list file o thu muc tren server truyen vao ten loai file va kieu file
 	public LinkedList<String> listFiles(String nameFile, String typeFile) throws Exception {
 		LinkedList<String> listFileSource = new LinkedList<String>();
-		//	Lay list file o thu muc tren server dung API SYNO.FileStation.List version 1
+//		Lay list file o thu muc tren server dung API SYNO.FileStation.List version 1
 			URL urlForGetRequest = new URL(
 					urlHttp + "/webapi/entry.cgi?api=SYNO.FileStation.List&version=1&method=list&folder_path="
 							+ srcFolderDriver + "&_sid=" + sid);
@@ -261,22 +261,6 @@ public class Download {
 				prepaUpdateLog.setString(2, status);
 				prepaUpdateLog.executeUpdate();
 
-//				String insertFileLog = "INSERT INTO table_log(source_folder, name_file, status, md5, config_id) VALUES (?, ?, ?, ?, ?)";
-//				PreparedStatement preIsFileLog = connection.prepareStatement(insertFileLog);
-//				preIsFileLog.setString(1, urlHttp + srcFolderDriver);
-//				preIsFileLog.setString(2, file2.getName());
-//				preIsFileLog.setString(3, "EOR");
-//				preIsFileLog.setString(4, "");
-//				if (file2.getName().contains("monhoc")) {
-//					preIsFileLog.setInt(5, 2);
-//				} else if (file2.getName().contains("dangky")) {
-//					preIsFileLog.setInt(5, 3);
-//				} else if (file2.getName().contains("lophoc")) {
-//					preIsFileLog.setInt(5, 4);
-//				} else {
-//					preIsFileLog.setInt(5, 1);
-//				}
-//				preIsFileLog.execute();
 				
 			}
 			connection.close();  //	dong ket noi DB
@@ -321,9 +305,9 @@ public class Download {
 		return srcFileCheck;  //	xuat ra duong dan den file do tren server
 	}
 
-	public static void main(String[] args) throws Exception {
-		Download test = new Download();
-		test.down();
-	}
+//	public static void main(String[] args) throws Exception {
+//		Download test = new Download();
+//		test.down();
+//	}
 
 }
