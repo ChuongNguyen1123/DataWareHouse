@@ -125,8 +125,8 @@ public class Download {
 	}
 
 	
-//	Check sum MD5 de kiem tra file tren server
-//	phuong thuc nhan cao duong dan den file tren server
+
+//	phuong thuc nhan vao duong dan den file tren server de lay ma cho phuong thuc md5
 	public String checkSumMD5FileSrc(String srcFile) throws IOException, ParseException {
 		String taskid = ""; // chuoi ket qua sau khi checksum
 //		doi API md5 la SYNO.FileStation.MD5 version 1 de check sum file 
@@ -151,14 +151,39 @@ public class Download {
 		}
 		return taskid;
 	}
+	
+//	Phuong thuc lay MD5 cua file tren server
+	public String getMD5 (String srcFile) throws IOException, ParseException {
+		String md5 = ""; 
+		String staskid = checkSumMD5FileSrc(srcFile);
+//		doi API md5 la SYNO.FileStation.MD5 version 1 
+		URL urlForGetRequest = new URL(
+				urlHttp + "/webapi/FileStation/file_md5.cgi?api=SYNO.FileStation.MD5&version=1&method=status&taskid="+ staskid + "&_sid=" + sid);
+		HttpURLConnection conectHttpURL = (HttpURLConnection) urlForGetRequest.openConnection();
+		conectHttpURL.setRequestMethod("GET");
+		int responseCode = conectHttpURL.getResponseCode();
+		if (responseCode == HttpURLConnection.HTTP_OK) {
+			BufferedReader in = new BufferedReader(new InputStreamReader(conectHttpURL.getInputStream()));
+			StringBuffer response = new StringBuffer();
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				response.append(line);
+			}
+			in.close();
+			JSONParser parser = new JSONParser();
+			JSONObject jsonObject = (JSONObject) parser.parse(response.toString());
+//			lay ra ket qua md5
+			md5 = (String) ((JSONObject) jsonObject.get("data")).get("md5");
+		}
+		return md5;
+	}
 
-//	Phuong thuc down file tren server
+//	Phuong thuc down file tren server theo tung dong config
 	public void down(int id) throws Exception {
 		LinkedList<String> listFileSrc = new LinkedList<>();
 		String kieuFile = "";
 		String loaiFile = "";
-		int id_Config = 0;
-		
+		int id_Config = 0;	
 //		goi ham  noi voi DB
 		ConnectionDB connectDB = new ConnectionDB();
 		Connection connection = connectDB.loadProps();
@@ -189,9 +214,9 @@ public class Download {
 //					duyet mang file de down load tung file con ve
 				for (int i = 0; i < listFileSrc.size(); i++) {
 //						Truoc khi down can phai check file do da co trong log hay chua 
-					String srcFileCheck = checkFile(listFileSrc.get(i), id_Config, connection); // goi ham checkfile de kiem tra
-					if (srcFileCheck != null) { // file tren server la file moi hoac file co su thay doi
-						String nameFile = srcFileCheck.substring(srcFileCheck.lastIndexOf("/") + 1); // lay ra ten file tren server
+					boolean srcFileCheck = checkFile(listFileSrc.get(i), id_Config, connection); // goi ham checkfile de kiem tra
+					if (srcFileCheck == false) { // file tren server la file moi hoac file co su thay doi
+						String nameFile = listFileSrc.get(i).substring(listFileSrc.get(i).lastIndexOf("/") + 1); // lay ra ten file tren server
 //			goi API download file ve local la SYNO.FileStation.Download version 1
 						URL urlForGetRequest = new URL(urlHttp
 								+ "/webapi/entry.cgi?api=SYNO.FileStation.Download&version=1&method=download&mode=open&path="
@@ -236,10 +261,10 @@ public class Download {
 	}
 
 //	Kiem tra file tren server voi duoi local
-	public String checkFile(String pathNameFileSrc, int id_Config, Connection connection) throws Exception {
+	public boolean checkFile(String pathNameFileSrc, int id_Config, Connection connection) throws Exception {
 		String srcFileCheck = "";
 		String status = "Server"; // set status nhung file tren local chua duoc down
-		String checkMD5 = checkSumMD5FileSrc(pathNameFileSrc); // goi ham checksum file server o tren
+		String checkMD5 = getMD5(pathNameFileSrc); // goi ham getmd5 file server o tren
 		String nameFileLog = pathNameFileSrc.substring(pathNameFileSrc.lastIndexOf("/") + 1); // cat namfileSRC thanh namfile
 //	Cau sql selec bang log theo name file de so sanh
 		String sqlSelectLog = "SELECT * FROM table_log WHERE name_file = '" + nameFileLog + "' ";
@@ -249,7 +274,7 @@ public class Download {
 		if (rsSelect_log.next()) { 
 //		tien hanh so sanh md5 
 			if (rsSelect_log.getString("md5").equals(checkMD5)) {
-				srcFileCheck = null; 
+				return true; 
 			} else if (!rsSelect_log.getString("md5").equals(checkMD5)) { // neu cung ten ma khac nhau cai MD5
 				srcFileCheck = pathNameFileSrc;
 //				Cau query de cap nhat vao cot table log
@@ -257,6 +282,7 @@ public class Download {
 						+ "' WHERE name_file = '" + nameFileLog + "'";
 				PreparedStatement preUpdateLog = connection.prepareStatement(updateLog);
 				preUpdateLog.executeUpdate();
+				return false;
 			}
 //	La file moi chua ton tai trong log
 		} else { 
@@ -271,18 +297,23 @@ public class Download {
 			preIsFileLog.setInt(5, id_Config);
 			preIsFileLog.execute();
 		}
-		return srcFileCheck; // xuat ra duong dan den file do tren server
+		return false; // xuat ra duong dan den file do tren server
 	}
 
 
 	public void down() throws Exception {
-		int i = 1;
-		while (i < 5) {
-			down(i);
-			sid = null;
-			i++;
+		ConnectionDB connectDB = new ConnectionDB();
+		Connection connection = connectDB.loadProps();
+		String sqlConfig = "SELECT * FROM table_config";
+		PreparedStatement preConfig = connection.prepareStatement(sqlConfig);
+		ResultSet rs = preConfig.executeQuery();
+		while(rs.next()) {
+			int id_config = rs.getInt("id");
+			down(id_config);
 		}
 	}
 
-
+//public static void main(String[] args) throws Exception {
+//	new Download().down();
+//}
 }
